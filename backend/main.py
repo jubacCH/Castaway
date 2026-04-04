@@ -18,7 +18,10 @@ from models.user import Session, User, hash_token
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    from services.scheduler import start_scheduler, stop_scheduler
+    start_scheduler()
     yield
+    stop_scheduler()
 
 
 _debug = os.environ.get("DEBUG", "").lower() in ("1", "true", "yes")
@@ -163,6 +166,7 @@ from routers import vaultwarden as vaultwarden_router
 from routers import sessions as sessions_router
 from routers import users as users_router
 from routers import rdp, import_export
+from routers import settings as settings_router
 
 app.include_router(auth.router)
 app.include_router(connections.router)
@@ -174,5 +178,6 @@ app.include_router(sessions_router.router)
 app.include_router(users_router.router)
 app.include_router(rdp.router)
 app.include_router(import_export.router)
+app.include_router(settings_router.router)
 app.include_router(pages.router)
 app.include_router(ws_ssh.router)

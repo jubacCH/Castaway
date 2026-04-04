@@ -9,6 +9,7 @@ from models.session_log import SessionLog
 from models.api_key import ApiKey
 from models.phpipam_config import PhpIpamConfig
 from models.vaultwarden_config import VaultwardenConfig
+from models.setting import Setting
 
 __all__ = [
     "Base", "engine", "AsyncSessionLocal", "get_db",
@@ -16,7 +17,7 @@ __all__ = [
     "User", "Session",
     "SSHConnection", "Folder", "Tag", "connection_tags",
     "SessionLog", "ApiKey",
-    "PhpIpamConfig", "VaultwardenConfig",
+    "PhpIpamConfig", "VaultwardenConfig", "Setting",
 ]
 
 
