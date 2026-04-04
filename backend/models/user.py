@@ -19,6 +19,8 @@ class User(Base):
     password_hash = Column(String(128), nullable=False)
     role = Column(String(16), default="user")  # admin | user
     is_active = Column(Boolean, default=True)
+    mfa_secret = Column(String(64), nullable=True)  # TOTP secret (base32)
+    mfa_enabled = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 

@@ -15,8 +15,9 @@
             <p class="text-sm text-slate-500 mt-1 font-label">SSH Session Manager</p>
         </div>
         <div class="bg-slate-900/60 backdrop-blur-sm rounded-xl border border-slate-800 p-6">
-            <h2 class="text-lg font-semibold text-white mb-5 font-headline">Sign in</h2>
+            <h2 id="loginTitle" class="text-lg font-semibold text-white mb-5 font-headline">Sign in</h2>
             <div id="error" class="hidden mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm"></div>
+            <!-- Step 1: Credentials -->
             <form id="loginForm" class="space-y-4">
                 <div>
                     <label class="block text-xs text-slate-400 mb-1.5 font-label uppercase tracking-wider">Username</label>
@@ -30,9 +31,22 @@
                 </div>
                 <button type="submit"
                     class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-colors active:scale-[0.98] flex items-center justify-center gap-2">
-                    <span class="material-symbols-outlined text-[18px]">login</span>
-                    Sign in
+                    <span class="material-symbols-outlined text-[18px]">login</span> Sign in
                 </button>
+            </form>
+            <!-- Step 2: MFA code -->
+            <form id="mfaForm" class="space-y-4 hidden">
+                <p class="text-sm text-slate-400">Enter the 6-digit code from your authenticator app</p>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1.5 font-label uppercase tracking-wider">MFA Code</label>
+                    <input type="text" name="mfa_code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"
+                        class="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-center text-2xl font-mono tracking-[0.3em] placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+                <button type="submit"
+                    class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-colors active:scale-[0.98] flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">verified_user</span> Verify
+                </button>
+                <button type="button" id="cancelMfa" class="w-full text-xs text-slate-500 hover:text-slate-300 transition-colors">Cancel</button>
             </form>
         </div>
     </div>
@@ -41,19 +55,66 @@
 
 {% block scripts %}
 <script nonce="{{ request.state.csp_nonce }}">
+let savedCreds = null;
+
+async function attemptLogin(username, password, mfaCode) {
+    const body = { username, password };
+    if (mfaCode) body.mfa_code = mfaCode;
+    const res = await fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    return await res.json();
+}
+
+function showError(msg) {
+    const el = document.getElementById('error');
+    el.textContent = msg || 'Login failed';
+    el.classList.remove('hidden');
+}
+
+function showMfaStep() {
+    document.getElementById('loginForm').classList.add('hidden');
+    document.getElementById('mfaForm').classList.remove('hidden');
+    document.getElementById('loginTitle').textContent = 'Two-Factor Auth';
+    document.getElementById('error').classList.add('hidden');
+    setTimeout(() => document.querySelector('input[name="mfa_code"]').focus(), 100);
+}
+
+function showLoginStep() {
+    document.getElementById('mfaForm').classList.add('hidden');
+    document.getElementById('loginForm').classList.remove('hidden');
+    document.getElementById('loginTitle').textContent = 'Sign in';
+    document.getElementById('error').classList.add('hidden');
+    savedCreds = null;
+}
+
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    document.getElementById('error').classList.add('hidden');
     const form = e.target;
-    const error = document.getElementById('error');
-    error.classList.add('hidden');
-    const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: form.username.value, password: form.password.value }),
-    });
-    const data = await res.json();
-    if (data.ok) { window.location.href = '/connections'; }
-    else { error.textContent = data.error || 'Login failed'; error.classList.remove('hidden'); }
+    const data = await attemptLogin(form.username.value, form.password.value);
+    if (data.ok) { window.location.href = '/connections'; return; }
+    if (data.mfa_required) {
+        savedCreds = { username: form.username.value, password: form.password.value };
+        showMfaStep();
+        return;
+    }
+    showError(data.error);
 });
+
+document.getElementById('mfaForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    document.getElementById('error').classList.add('hidden');
+    const code = e.target.mfa_code.value;
+    if (!savedCreds) { showLoginStep(); return; }
+    const data = await attemptLogin(savedCreds.username, savedCreds.password, code);
+    if (data.ok) { window.location.href = '/connections'; return; }
+    showError(data.error);
+    e.target.mfa_code.value = '';
+    e.target.mfa_code.focus();
+});
+
+document.getElementById('cancelMfa').addEventListener('click', showLoginStep);
 </script>
 {% endblock %}

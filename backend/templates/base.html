@@ -68,6 +68,9 @@
                 <span class="material-symbols-outlined">settings</span>
             </a>
             {% endif %}
+            <a class="{% if '/profile' in request.url.path %}text-blue-500 border-l-2 border-blue-500{% else %}text-slate-400 hover:text-slate-200{% endif %} hover:bg-slate-800 transition-colors flex items-center justify-center w-full py-3" href="/profile" title="Profile">
+                <span class="material-symbols-outlined">account_circle</span>
+            </a>
             <button onclick="logout()" class="text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors flex items-center justify-center w-full py-3" title="Logout">
                 <span class="material-symbols-outlined">logout</span>
             </button>
