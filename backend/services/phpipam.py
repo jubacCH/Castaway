@@ -113,7 +113,11 @@ async def preview_hosts(config: PhpIpamConfig) -> list[dict]:
         ip = (addr.get("ip") or "").strip()
         if not ip:
             continue
+        ssh_flag = (addr.get("custom_SSH") or "").strip().lower()
+        if ssh_flag not in ("yes", "1", "true"):
+            continue
         name = (addr.get("hostname") or addr.get("description") or ip).strip() or ip
+        port_web = (addr.get("custom_Port_Web") or "").strip()
         hosts.append({
             "ip": ip,
             "hostname": name,
@@ -121,6 +125,8 @@ async def preview_hosts(config: PhpIpamConfig) -> list[dict]:
             "subnet_id": addr.get("subnetId") or "",
             "last_seen": addr.get("lastSeen") or "",
             "source_id": str(addr.get("id", ip)),
+            "ssh": True,
+            "port_web": port_web,
         })
     return sorted(hosts, key=lambda h: h["ip"])
 
@@ -165,13 +171,22 @@ async def sync_hosts(db: AsyncSession, config: PhpIpamConfig, user_id: int) -> d
             skipped += 1
             continue
 
+        # Only import hosts with custom_SSH = "Yes"
+        ssh_flag = (addr.get("custom_SSH") or "").strip().lower()
+        if ssh_flag not in ("yes", "1", "true"):
+            skipped += 1
+            continue
+
         name = (addr.get("hostname") or addr.get("description") or ip).strip() or ip
         source_id = str(addr.get("id", ip))
 
-        # Derive web_url from hostname (only if it looks like a FQDN, not a bare IP)
+        # Build web_url from hostname + custom_Port_Web
         web_url = None
-        if name and not name.replace(".", "").isdigit() and "." in name:
-            web_url = f"https://{name}"
+        port_web = (addr.get("custom_Port_Web") or "").strip()
+        if port_web and name and not name.replace(".", "").isdigit() and "." in name:
+            web_url = f"https://{name}:{port_web}"
+        elif port_web and name:
+            web_url = f"https://{ip}:{port_web}"
 
         try:
             if source_id in existing:
@@ -183,8 +198,10 @@ async def sync_hosts(db: AsyncSession, config: PhpIpamConfig, user_id: int) -> d
                 if conn.name != name[:128]:
                     conn.name = name[:128]
                     changed = True
-                if web_url and not conn.web_url:
-                    conn.web_url = web_url
+                # Update web_url from phpIPAM (always sync, not just when empty)
+                new_web_url = web_url or conn.web_url
+                if new_web_url != conn.web_url:
+                    conn.web_url = new_web_url
                     changed = True
                 if changed:
                     updated += 1
