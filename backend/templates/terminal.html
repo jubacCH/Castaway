@@ -3,27 +3,33 @@
 
 {% block head %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
-<style>
-    #terminal-container { height: calc(100vh - 3rem); }
-    .xterm { height: 100%; }
-</style>
+<style>#terminal-container { height: calc(100vh - 4rem); } .xterm { height: 100%; }</style>
+{% endblock %}
+
+{% block topbar %}
+<div class="flex items-center gap-4 flex-1">
+    <a href="/connections" class="text-slate-500 hover:text-slate-300 transition-colors">
+        <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <div>
+        <span class="font-bold text-slate-100 font-headline">{{ connection.name }}</span>
+        <span class="text-xs text-slate-500 font-mono ml-2">{{ connection.username or 'root' }}@{{ connection.host }}:{{ connection.port }}</span>
+    </div>
+</div>
+<div class="flex items-center gap-3">
+    <div class="flex items-center gap-2">
+        <div id="statusDot" class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div>
+        <span id="status" class="text-xs text-yellow-400 font-label">Connecting...</span>
+    </div>
+    <button onclick="disconnect()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1">
+        <span class="material-symbols-outlined text-[16px]">power_settings_new</span>
+        Disconnect
+    </button>
+</div>
 {% endblock %}
 
 {% block content %}
-<div class="flex flex-col h-full">
-    <div class="flex items-center justify-between px-4 py-2 bg-slate-900 border-b border-slate-800">
-        <div class="flex items-center gap-3">
-            <a href="/connections" class="text-slate-500 hover:text-slate-300 text-sm">&larr;</a>
-            <span class="text-sm font-medium text-white">{{ connection.name }}</span>
-            <span class="text-xs text-slate-500">{{ connection.username }}@{{ connection.host }}:{{ connection.port }}</span>
-        </div>
-        <div class="flex items-center gap-2">
-            <span id="status" class="text-xs text-yellow-400">Connecting...</span>
-            <button onclick="disconnect()" class="px-2 py-1 text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded transition-colors">Disconnect</button>
-        </div>
-    </div>
-    <div id="terminal-container" class="flex-1 bg-black"></div>
-</div>
+<div id="terminal-container" class="bg-black"></div>
 {% endblock %}
 
 {% block scripts %}
@@ -32,21 +38,13 @@
 <script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.min.js" nonce="{{ request.state.csp_nonce }}"></script>
 <script nonce="{{ request.state.csp_nonce }}">
 const connId = {{ connection.id }};
-const statusEl = document.getElementById('status');
 let ws;
 
 const term = new Terminal({
-    cursorBlink: true,
-    fontSize: 14,
-    fontFamily: '"Cascadia Code", "Fira Code", "JetBrains Mono", monospace',
-    theme: {
-        background: '#000000',
-        foreground: '#e2e8f0',
-        cursor: '#3b82f6',
-        selectionBackground: '#334155',
-    },
+    cursorBlink: true, fontSize: 14,
+    fontFamily: '"Geist Mono", "Cascadia Code", "Fira Code", monospace',
+    theme: { background: '#000000', foreground: '#e2e8f0', cursor: '#3b82f6', selectionBackground: '#334155' },
 });
-
 const fitAddon = new FitAddon.FitAddon();
 term.loadAddon(fitAddon);
 term.loadAddon(new WebLinksAddon.WebLinksAddon());
@@ -57,79 +55,42 @@ const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
 ws = new WebSocket(`${proto}//${location.host}/ws/ssh/${connId}`);
 
 ws.onopen = () => {
-    statusEl.textContent = 'Connected';
-    statusEl.className = 'text-xs text-green-400';
-    // Send initial terminal size
+    document.getElementById('status').textContent = 'Connected';
+    document.getElementById('status').className = 'text-xs text-success font-label';
+    document.getElementById('statusDot').className = 'w-2 h-2 rounded-full bg-success animate-pulse';
     ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
 };
-
 ws.onmessage = (e) => {
     try {
         const msg = JSON.parse(e.data);
-        if (msg.type === 'error') {
-            term.write(`\r\n\x1b[31mError: ${msg.message}\x1b[0m\r\n`);
-            statusEl.textContent = 'Error';
-            statusEl.className = 'text-xs text-red-400';
-            return;
-        }
-        if (msg.type === 'connected') {
-            return;
-        }
+        if (msg.type === 'error') { term.write(`\r\n\x1b[31mError: ${msg.message}\x1b[0m\r\n`); return; }
+        if (msg.type === 'connected') return;
     } catch {}
     term.write(e.data);
 };
-
 ws.onclose = () => {
     term.write('\r\n\x1b[33mConnection closed.\x1b[0m\r\n');
-    statusEl.textContent = 'Disconnected';
-    statusEl.className = 'text-xs text-slate-500';
+    document.getElementById('status').textContent = 'Disconnected';
+    document.getElementById('status').className = 'text-xs text-slate-500 font-label';
+    document.getElementById('statusDot').className = 'w-2 h-2 rounded-full bg-slate-600';
 };
-
 ws.onerror = () => {
-    statusEl.textContent = 'Error';
-    statusEl.className = 'text-xs text-red-400';
+    document.getElementById('status').textContent = 'Error';
+    document.getElementById('status').className = 'text-xs text-red-400 font-label';
+    document.getElementById('statusDot').className = 'w-2 h-2 rounded-full bg-red-400';
 };
-
-term.onData((data) => {
-    if (ws.readyState === WebSocket.OPEN) {
-        ws.send(data);
-    }
-});
-
+term.onData((data) => { if (ws.readyState === WebSocket.OPEN) ws.send(data); });
 window.addEventListener('resize', () => {
     fitAddon.fit();
-    if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
-    }
+    if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
 });
 
-function disconnect() {
-    ws.close();
-    window.location.href = '/connections';
-}
+function disconnect() { ws.close(); window.location.href = '/connections'; }
 
-// Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
-    // Ctrl+Shift+C — copy selection
-    if (e.ctrlKey && e.shiftKey && e.key === 'C') {
-        const sel = term.getSelection();
-        if (sel) {
-            navigator.clipboard.writeText(sel);
-            e.preventDefault();
-        }
-    }
-    // Ctrl+Shift+V — paste
-    if (e.ctrlKey && e.shiftKey && e.key === 'V') {
-        navigator.clipboard.readText().then(text => {
-            if (text && ws.readyState === WebSocket.OPEN) ws.send(text);
-        });
-        e.preventDefault();
-    }
-    // Ctrl+Shift+D — disconnect
-    if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-        disconnect();
-        e.preventDefault();
-    }
+    if (e.ctrlKey && e.shiftKey && e.key === 'C') { const sel = term.getSelection(); if (sel) { navigator.clipboard.writeText(sel); e.preventDefault(); } }
+    if (e.ctrlKey && e.shiftKey && e.key === 'V') { navigator.clipboard.readText().then(t => { if (t && ws.readyState === WebSocket.OPEN) ws.send(t); }); e.preventDefault(); }
+    if (e.ctrlKey && e.shiftKey && e.key === 'D') { disconnect(); e.preventDefault(); }
 });
 </script>
 {% endblock %}
