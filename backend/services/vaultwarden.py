@@ -277,10 +277,8 @@ async def auto_match_credentials(
     )
     connections = result.scalars().all()
 
-    # Only consider credentials that look like SSH access
-    _ssh_keywords = ("ssh", "root", "lxc", "server", "node", "linux")
-    ssh_creds = [c for c in credentials
-                 if any(kw in c["name"].lower() for kw in _ssh_keywords)]
+    # Only consider credentials with "ssh" in the name
+    ssh_creds = [c for c in credentials if "ssh" in c["name"].lower()]
 
     matches = []
     for conn in connections:
