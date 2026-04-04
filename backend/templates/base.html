@@ -95,19 +95,45 @@
         {% block fullpage %}{% endblock %}
     {% endif %}
 
+    <!-- Toast container -->
+    <div id="toasts" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none" style="max-width:360px"></div>
+
     <script nonce="{{ request.state.csp_nonce }}">
         function getCsrf() {
             const meta = document.querySelector('meta[name="csrf-token"]');
             return meta ? meta.content : '';
         }
+
+        function toast(msg, type = 'info') {
+            const colors = {
+                success: 'bg-green-500/20 border-green-500/30 text-green-400',
+                error: 'bg-red-500/20 border-red-500/30 text-red-400',
+                info: 'bg-blue-500/20 border-blue-500/30 text-blue-400',
+            };
+            const icons = { success: 'check_circle', error: 'error', info: 'info' };
+            const el = document.createElement('div');
+            el.className = `pointer-events-auto flex items-center gap-2 px-4 py-3 rounded-lg border text-sm font-medium ${colors[type] || colors.info} animate-[fadeIn_0.2s]`;
+            el.innerHTML = `<span class="material-symbols-outlined text-[16px]">${icons[type] || icons.info}</span>${msg}`;
+            document.getElementById('toasts').appendChild(el);
+            setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 4000);
+        }
+
         async function logout() {
             await fetch('/api/auth/logout', { method: 'POST', headers: { 'X-CSRF-Token': getCsrf() } });
             window.location.href = '/login';
         }
+
         async function apiFetch(url, opts = {}) {
             const headers = { 'X-CSRF-Token': getCsrf(), ...opts.headers };
             if (opts.body) headers['Content-Type'] = 'application/json';
-            return fetch(url, { ...opts, headers });
+            try {
+                const res = await fetch(url, { ...opts, headers });
+                if (!res.ok && res.status >= 500) toast('Server error — try again later', 'error');
+                return res;
+            } catch (e) {
+                toast('Network error — server unreachable', 'error');
+                throw e;
+            }
         }
     </script>
     {% block scripts %}{% endblock %}

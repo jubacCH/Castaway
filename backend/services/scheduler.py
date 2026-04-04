@@ -30,6 +30,26 @@ async def set_setting(key: str, value: str):
         await db.commit()
 
 
+async def _cleanup_loop():
+    """Clean up expired sessions every hour."""
+    await asyncio.sleep(60)
+    while True:
+        try:
+            from datetime import datetime
+            from models.user import Session
+            from sqlalchemy import delete
+            async with AsyncSessionLocal() as db:
+                result = await db.execute(
+                    delete(Session).where(Session.expires_at < datetime.utcnow())
+                )
+                if result.rowcount:
+                    await db.commit()
+                    logger.info("Cleaned up %d expired sessions", result.rowcount)
+        except Exception as e:
+            logger.error("Session cleanup error: %s", e)
+        await asyncio.sleep(3600)
+
+
 async def _status_loop():
     """Periodically check connection status (TCP port check)."""
     await asyncio.sleep(15)
@@ -100,18 +120,20 @@ async def _screenshot_loop():
         await asyncio.sleep(sleep_seconds)
 
 
+_cleanup_task: asyncio.Task | None = None
+
+
 def start_scheduler():
-    global _screenshot_task, _status_task
+    global _screenshot_task, _status_task, _cleanup_task
+    _cleanup_task = asyncio.create_task(_cleanup_loop())
     _status_task = asyncio.create_task(_status_loop())
     _screenshot_task = asyncio.create_task(_screenshot_loop())
-    logger.info("Schedulers started (status + screenshots)")
+    logger.info("Schedulers started (cleanup + status + screenshots)")
 
 
 def stop_scheduler():
-    global _screenshot_task, _status_task
-    if _status_task:
-        _status_task.cancel()
-        _status_task = None
-    if _screenshot_task:
-        _screenshot_task.cancel()
-        _screenshot_task = None
+    global _screenshot_task, _status_task, _cleanup_task
+    for task in (_cleanup_task, _status_task, _screenshot_task):
+        if task:
+            task.cancel()
+    _cleanup_task = _status_task = _screenshot_task = None
