@@ -1,5 +1,6 @@
 """phpIPAM API client and host sync service."""
 
+import asyncio
 import logging
 from datetime import datetime
 
@@ -178,6 +179,8 @@ async def sync_hosts(db: AsyncSession, config: PhpIpamConfig, user_id: int) -> d
     added = updated = skipped = 0
     errors: list[str] = []
 
+    # Phase 1: Filter SSH hosts and collect web URL probes
+    ssh_hosts = []
     for addr in addresses:
         if str(addr.get("active", "1")) == "0":
             skipped += 1
@@ -186,22 +189,34 @@ async def sync_hosts(db: AsyncSession, config: PhpIpamConfig, user_id: int) -> d
         if not ip:
             skipped += 1
             continue
-
-        # Only import hosts with custom_SSH = "Yes"
         ssh_flag = str(addr.get("custom_SSH") or "").strip().lower()
         if ssh_flag not in ("yes", "1", "true"):
             skipped += 1
             continue
-
         name = (addr.get("hostname") or addr.get("description") or ip).strip() or ip
         source_id = str(addr.get("id", ip))
-
-        # Build web_url from hostname + custom_Port_Web (probe https first, fallback http)
-        web_url = None
         port_web = str(addr.get("custom_Port_Web") or "").strip()
-        if port_web:
-            host_part = name if (name and not name.replace(".", "").isdigit() and "." in name) else ip
-            web_url = await _probe_web_url(host_part, port_web)
+        host_part = name if (name and not name.replace(".", "").isdigit() and "." in name) else ip
+        ssh_hosts.append({"ip": ip, "name": name, "source_id": source_id,
+                          "port_web": port_web, "host_part": host_part})
+
+    # Phase 2: Probe all web URLs concurrently
+    web_urls: dict[str, str | None] = {}
+    probe_tasks = []
+    for h in ssh_hosts:
+        if h["port_web"]:
+            async def _probe(sid=h["source_id"], hp=h["host_part"], pw=h["port_web"]):
+                web_urls[sid] = await _probe_web_url(hp, pw)
+            probe_tasks.append(_probe())
+    if probe_tasks:
+        await asyncio.gather(*probe_tasks)
+
+    # Phase 3: Sync to DB
+    for h in ssh_hosts:
+        name = h["name"]
+        ip = h["ip"]
+        source_id = h["source_id"]
+        web_url = web_urls.get(source_id)
 
         try:
             if source_id in existing:
