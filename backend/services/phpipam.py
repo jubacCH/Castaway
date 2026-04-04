@@ -14,6 +14,22 @@ from models.phpipam_config import PhpIpamConfig
 logger = logging.getLogger(__name__)
 
 
+async def _probe_web_url(host: str, port: str) -> str | None:
+    """Try https first, fallback to http. Returns working URL or None."""
+    for scheme in ("https", "http"):
+        url = f"{scheme}://{host}:{port}"
+        try:
+            async with httpx.AsyncClient(verify=False, timeout=4, follow_redirects=True) as client:
+                resp = await client.head(url)
+                if resp.status_code < 500:
+                    logger.debug("Web probe OK: %s (%d)", url, resp.status_code)
+                    return url
+        except Exception:
+            continue
+    # Default to https if both fail (might work later)
+    return f"https://{host}:{port}"
+
+
 class PhpIpamClient:
     """Async client for phpIPAM REST API."""
 
@@ -180,13 +196,12 @@ async def sync_hosts(db: AsyncSession, config: PhpIpamConfig, user_id: int) -> d
         name = (addr.get("hostname") or addr.get("description") or ip).strip() or ip
         source_id = str(addr.get("id", ip))
 
-        # Build web_url from hostname + custom_Port_Web
+        # Build web_url from hostname + custom_Port_Web (probe https first, fallback http)
         web_url = None
         port_web = str(addr.get("custom_Port_Web") or "").strip()
-        if port_web and name and not name.replace(".", "").isdigit() and "." in name:
-            web_url = f"https://{name}:{port_web}"
-        elif port_web and name:
-            web_url = f"https://{ip}:{port_web}"
+        if port_web:
+            host_part = name if (name and not name.replace(".", "").isdigit() and "." in name) else ip
+            web_url = await _probe_web_url(host_part, port_web)
 
         try:
             if source_id in existing:
