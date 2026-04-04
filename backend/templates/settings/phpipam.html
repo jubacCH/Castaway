@@ -157,11 +157,21 @@ function resetForm() {
     editingId = null;
 }
 
-async function testConfig(id) {
-    const res = await apiFetch(`/api/phpipam/configs/${id}/test`, { method: 'POST' });
-    const data = await res.json();
+function showLoading(title) {
     const el = document.getElementById('syncResults');
     el.classList.remove('hidden');
+    document.getElementById('syncTitle').textContent = title;
+    document.getElementById('syncContent').innerHTML = `
+        <div class="flex items-center gap-3 text-sm text-slate-400">
+            <span class="material-symbols-outlined animate-spin text-blue-400">sync</span>
+            Loading...
+        </div>`;
+}
+
+async function testConfig(id) {
+    showLoading('Testing connection...');
+    const res = await apiFetch(`/api/phpipam/configs/${id}/test`, { method: 'POST' });
+    const data = await res.json();
     document.getElementById('syncTitle').textContent = 'Connection Test';
     document.getElementById('syncContent').innerHTML = data.ok
         ? `<p class="text-green-400 text-sm">Connected! Found ${data.addresses_total} addresses (${data.addresses_active} active)</p>`
@@ -169,6 +179,7 @@ async function testConfig(id) {
 }
 
 async function previewSync(id) {
+    showLoading('Loading preview...');
     const res = await apiFetch(`/api/phpipam/configs/${id}/preview`);
     const data = await res.json();
     const el = document.getElementById('syncResults');
@@ -192,6 +203,7 @@ async function previewSync(id) {
 }
 
 async function syncNow(id) {
+    showLoading('Syncing hosts...');
     const res = await apiFetch(`/api/phpipam/configs/${id}/sync`, { method: 'POST' });
     const data = await res.json();
     const el = document.getElementById('syncResults');
