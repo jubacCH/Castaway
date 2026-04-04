@@ -14,6 +14,7 @@ class ConnectionCreate(BaseModel):
     folder_id: int | None = None
     notes: str | None = None
     jump_host_id: int | None = None
+    web_url: str | None = None
     tag_ids: list[int] = []
 
 
@@ -30,6 +31,7 @@ class ConnectionUpdate(BaseModel):
     folder_id: int | None = None
     notes: str | None = None
     jump_host_id: int | None = None
+    web_url: str | None = None
     tag_ids: list[int] | None = None
 
 
@@ -44,6 +46,7 @@ class ConnectionOut(BaseModel):
     folder_id: int | None
     notes: str | None
     jump_host_id: int | None
+    web_url: str | None
     source: str
     source_id: str | None
     created_at: str | None
