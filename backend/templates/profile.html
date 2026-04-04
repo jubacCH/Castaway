@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Profile — Castaway{% endblock %}
+
+{% block topbar_left %}
+<span class="material-symbols-outlined text-blue-400 text-xl">account_circle</span>
+<h1 class="text-white font-headline font-semibold text-base">Profile</h1>
+{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-2xl space-y-6">
+
+    <!-- Account Info -->
+    <div class="bg-slate-900/40 border border-slate-800 rounded-xl p-6">
+        <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider font-label mb-4">Account</h3>
+        <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+                <span class="text-slate-500">Username</span>
+                <span class="text-white font-medium">{{ user.username }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-slate-500">Email</span>
+                <span class="text-slate-300">{{ user.email or '—' }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-slate-500">Role</span>
+                <span class="text-[10px] bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded">{{ user.role }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MFA -->
+    <div class="bg-slate-900/40 border border-slate-800 rounded-xl p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider font-label">Two-Factor Auth (TOTP)</h3>
+            <span id="mfaBadge" class="text-[10px] px-2 py-0.5 rounded border"></span>
+        </div>
+
+        <div id="mfaError" class="hidden mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm"></div>
+
+        <!-- When disabled: show Enable button -->
+        <div id="mfaDisabled" class="hidden">
+            <p class="text-sm text-slate-400 mb-4">Protect your account with a second factor using an authenticator app (Google Authenticator, Authy, 1Password, etc.)</p>
+            <button id="enableMfaBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px]">add</span> Enable MFA
+            </button>
+        </div>
+
+        <!-- Setup flow -->
+        <div id="mfaSetup" class="hidden space-y-4">
+            <p class="text-sm text-slate-400">Scan this QR code with your authenticator app:</p>
+            <div class="flex justify-center">
+                <img id="mfaQr" src="" alt="QR Code" class="rounded-lg border-2 border-slate-700">
+            </div>
+            <p class="text-xs text-slate-500 text-center">Or enter this secret manually: <code id="mfaSecret" class="text-slate-300 font-mono select-all"></code></p>
+            <div>
+                <label class="block text-xs text-slate-400 mb-1.5 font-label">Enter 6-digit code to confirm:</label>
+                <input type="text" id="mfaVerifyCode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
+                    class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-center text-xl font-mono tracking-[0.3em] focus:outline-none focus:ring-1 focus:ring-blue-500">
+            </div>
+            <div class="flex gap-2">
+                <button id="verifyMfaBtn" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-semibold transition-colors">Verify & Enable</button>
+                <button id="cancelSetupBtn" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition-colors">Cancel</button>
+            </div>
+        </div>
+
+        <!-- When enabled: show Disable -->
+        <div id="mfaEnabled" class="hidden space-y-4">
+            <p class="text-sm text-green-400 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px]">verified_user</span>
+                MFA is enabled for your account
+            </p>
+            <div>
+                <label class="block text-xs text-slate-400 mb-1.5 font-label">Enter current code to disable:</label>
+                <input type="text" id="mfaDisableCode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
+                    class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-center text-xl font-mono tracking-[0.3em] focus:outline-none focus:ring-1 focus:ring-blue-500">
+            </div>
+            <button id="disableMfaBtn" class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px]">lock_open</span> Disable MFA
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ request.state.csp_nonce }}">
+function showError(msg) {
+    const el = document.getElementById('mfaError');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+}
+function clearError() { document.getElementById('mfaError').classList.add('hidden'); }
+
+async function loadMfaStatus() {
+    const res = await apiFetch('/api/mfa/status');
+    const data = await res.json();
+    const badge = document.getElementById('mfaBadge');
+    document.getElementById('mfaSetup').classList.add('hidden');
+    if (data.enabled) {
+        badge.textContent = 'Enabled';
+        badge.className = 'text-[10px] px-2 py-0.5 rounded border bg-green-500/20 text-green-400 border-green-500/30';
+        document.getElementById('mfaEnabled').classList.remove('hidden');
+        document.getElementById('mfaDisabled').classList.add('hidden');
+    } else {
+        badge.textContent = 'Disabled';
+        badge.className = 'text-[10px] px-2 py-0.5 rounded border bg-slate-700/50 text-slate-400 border-slate-700/30';
+        document.getElementById('mfaEnabled').classList.add('hidden');
+        document.getElementById('mfaDisabled').classList.remove('hidden');
+    }
+}
+
+document.getElementById('enableMfaBtn').addEventListener('click', async () => {
+    clearError();
+    const res = await apiFetch('/api/mfa/setup', { method: 'POST' });
+    const data = await res.json();
+    if (data.error) { showError(data.error); return; }
+    document.getElementById('mfaSecret').textContent = data.secret;
+    document.getElementById('mfaQr').src = '/api/mfa/qrcode.png?t=' + Date.now();
+    document.getElementById('mfaDisabled').classList.add('hidden');
+    document.getElementById('mfaSetup').classList.remove('hidden');
+});
+
+document.getElementById('verifyMfaBtn').addEventListener('click', async () => {
+    clearError();
+    const code = document.getElementById('mfaVerifyCode').value;
+    const res = await apiFetch('/api/mfa/verify', { method: 'POST', body: JSON.stringify({ code }) });
+    const data = await res.json();
+    if (data.error) { showError(data.error); return; }
+    toast('MFA enabled', 'success');
+    loadMfaStatus();
+});
+
+document.getElementById('cancelSetupBtn').addEventListener('click', loadMfaStatus);
+
+document.getElementById('disableMfaBtn').addEventListener('click', async () => {
+    clearError();
+    const code = document.getElementById('mfaDisableCode').value;
+    const res = await apiFetch('/api/mfa/disable', { method: 'POST', body: JSON.stringify({ code }) });
+    const data = await res.json();
+    if (data.error) { showError(data.error); return; }
+    toast('MFA disabled', 'success');
+    loadMfaStatus();
+});
+
+loadMfaStatus();
+</script>
+{% endblock %}

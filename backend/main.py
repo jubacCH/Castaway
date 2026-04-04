@@ -196,6 +196,7 @@ from routers import vaultwarden as vaultwarden_router
 from routers import sessions as sessions_router
 from routers import users as users_router
 from routers import rdp, import_export, api_keys
+from routers import mfa as mfa_router
 from routers import settings as settings_router
 
 app.include_router(auth.router)
@@ -210,5 +211,6 @@ app.include_router(rdp.router)
 app.include_router(import_export.router)
 app.include_router(settings_router.router)
 app.include_router(api_keys.router)
+app.include_router(mfa_router.router)
 app.include_router(pages.router)
 app.include_router(ws_ssh.router)

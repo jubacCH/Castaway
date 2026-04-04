@@ -158,6 +158,16 @@ async def terminal_page(request: Request, conn_id: int, db: AsyncSession = Depen
     })
 
 
+@router.get("/profile")
+async def profile_page(request: Request):
+    user = getattr(request.state, "current_user", None)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+    return templates.TemplateResponse("profile.html", {
+        "request": request, "user": user,
+    })
+
+
 @router.get("/sessions")
 async def sessions_page(request: Request):
     user = getattr(request.state, "current_user", None)

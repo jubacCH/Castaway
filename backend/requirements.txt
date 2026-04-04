@@ -11,4 +11,6 @@ bcrypt==4.2.1
 asyncssh==2.17.0
 alembic==1.14.1
 psycopg2-binary==2.9.10
+pyotp==2.9.0
+qrcode[pil]==7.4.2
 playwright==1.48.0
