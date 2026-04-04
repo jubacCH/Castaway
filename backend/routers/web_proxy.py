@@ -195,17 +195,15 @@ async def proxy_request(conn_id: int, path: str, request: Request):
             text = re.sub(r'url\(([\'"]?)(/(?!/)[^\'")]*)\1\)', rf'url(\1{prefix}\2\1)', text)
 
         if is_js or is_html:
-            # String literals starting with common API/static paths in JS code
-            # "/api/...", "/v1/...", "/v2/...", "/static/...", "/assets/..." etc.
-            for path_prefix in ("/api", "/v1", "/v2", "/static", "/assets", "/public", "/media", "/ws"):
-                text = re.sub(
-                    rf'"({re.escape(path_prefix)}(?:/[^"\s<>]*)?)"',
-                    rf'"{prefix}\1"', text
-                )
-                text = re.sub(
-                    rf"'({re.escape(path_prefix)}(?:/[^'\s<>]*)?)'",
-                    rf"'{prefix}\1'", text
-                )
+            # Rewrite ALL absolute path string literals ("/..." but not "//...")
+            # Skip if already prefixed with /web/
+            def _rewrite_js_path(m):
+                quote = m.group(1)
+                path = m.group(2)
+                if path.startswith("/web/"):
+                    return m.group(0)
+                return f'{quote}{prefix}{path}{quote}'
+            text = re.sub(r'(["\'])(/(?!/)[^"\'\s<>(){}]*?)\1', _rewrite_js_path, text)
 
         content = text.encode("utf-8")
         response_headers.pop("content-length", None)
