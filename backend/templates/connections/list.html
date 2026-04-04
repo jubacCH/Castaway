@@ -61,7 +61,7 @@
                     <span class="text-[10px] text-slate-600 font-mono">{{ item.conn.web_url }}</span>
                 </div>
                 <div class="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <a href="{{ item.conn.web_url }}" target="_blank" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1">
+                    <a href="/web/{{ item.conn.id }}/" target="_blank" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1">
                         <span class="material-symbols-outlined text-[14px]">open_in_new</span> Open Web
                     </a>
                     {% if item.conn.protocol == 'ssh' %}
