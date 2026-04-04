@@ -32,10 +32,10 @@ class VaultwardenClient:
                 "grant_type": "password",
                 "username": self.email,
                 "password": self.password,
-                "scope": "api",
-                "client_id": "cli",
-                "deviceType": "8",
-                "deviceIdentifier": "castaway",
+                "scope": "api offline_access",
+                "client_id": "web",
+                "deviceType": "10",
+                "deviceIdentifier": "castaway-session-manager",
                 "deviceName": "Castaway",
             }, headers={"Content-Type": "application/x-www-form-urlencoded"})
             if resp.status_code != 200:

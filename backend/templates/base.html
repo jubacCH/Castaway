@@ -55,9 +55,6 @@
             <a class="{% if 'vaultwarden' in request.url.path %}text-blue-500 border-l-2 border-blue-500{% else %}text-slate-400 hover:text-slate-200{% endif %} hover:bg-slate-800 transition-colors flex items-center justify-center w-full py-3" href="/settings/vaultwarden" title="Vaultwarden">
                 <span class="material-symbols-outlined">lock</span>
             </a>
-            <a class="{% if '/import' in request.url.path %}text-blue-500 border-l-2 border-blue-500{% else %}text-slate-400 hover:text-slate-200{% endif %} hover:bg-slate-800 transition-colors flex items-center justify-center w-full py-3" href="/settings/import" title="Import/Export">
-                <span class="material-symbols-outlined">swap_vertical_circle</span>
-            </a>
         </nav>
         <div class="mt-auto flex flex-col gap-1 w-full">
             {% if user.role == 'admin' %}

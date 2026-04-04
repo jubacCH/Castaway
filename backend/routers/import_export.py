@@ -1,9 +1,8 @@
-"""Import/Export routes — Keeper CSV, JSON export."""
+"""Export routes — JSON export of connections."""
 
 import json
-import logging
 
-from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,39 +11,7 @@ from models.base import get_db
 from models.connection import SSHConnection
 from models.tag import Tag, connection_tags
 
-logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
-
-
-@router.post("/import/keeper/preview")
-async def preview_keeper(request: Request, file: UploadFile = File(...)):
-    """Preview Keeper CSV import."""
-    user = getattr(request.state, "current_user", None)
-    if not user:
-        return JSONResponse({"error": "Unauthorized"}, status_code=401)
-
-    content = (await file.read()).decode("utf-8", errors="replace")
-    from services.keeper_import import preview_keeper_import
-    records = preview_keeper_import(content)
-    return {"records": records, "count": len(records)}
-
-
-@router.post("/import/keeper")
-async def import_keeper(
-    request: Request,
-    file: UploadFile = File(...),
-    mode: str = Form(default="connections"),
-    db: AsyncSession = Depends(get_db),
-):
-    """Import Keeper CSV. mode: 'connections' or 'credentials'."""
-    user = getattr(request.state, "current_user", None)
-    if not user:
-        return JSONResponse({"error": "Unauthorized"}, status_code=401)
-
-    content = (await file.read()).decode("utf-8", errors="replace")
-    from services.keeper_import import import_keeper_csv
-    result = await import_keeper_csv(db, content, user.id, mode=mode)
-    return result
 
 
 @router.get("/export/connections")
