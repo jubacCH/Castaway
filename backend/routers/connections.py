@@ -35,6 +35,8 @@ def _conn_to_dict(conn: SSHConnection, tags: list[dict] | None = None) -> dict:
         "web_url": conn.web_url,
         "source": conn.source,
         "source_id": conn.source_id,
+        "is_online": conn.is_online,
+        "last_check_at": str(conn.last_check_at) if conn.last_check_at else None,
         "created_at": str(conn.created_at) if conn.created_at else None,
         "updated_at": str(conn.updated_at) if conn.updated_at else None,
         "tags": tags or [],
@@ -132,6 +134,16 @@ async def delete_all_connections(request: Request, db: AsyncSession = Depends(ge
         await db.delete(conn)
     await db.commit()
     return {"ok": True, "deleted": count}
+
+
+@router.post("/status/refresh")
+async def refresh_status(request: Request, db: AsyncSession = Depends(get_db)):
+    user = _require_user(request)
+    if not user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    from services.status_check import check_all_connections
+    result = await check_all_connections(db, user.id)
+    return result
 
 
 @router.post("/screenshots/refresh")

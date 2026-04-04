@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 
 from models.base import Base
 
@@ -25,6 +25,8 @@ class SSHConnection(Base):
     notes = Column(Text, nullable=True)
     jump_host_id = Column(Integer, ForeignKey("connections.id", ondelete="SET NULL"), nullable=True)
     web_url = Column(String(512), nullable=True)  # optional web interface URL
+    is_online = Column(Boolean, default=None, nullable=True)  # last check result
+    last_check_at = Column(DateTime, nullable=True)
     source = Column(String(32), default="manual")  # manual | phpipam | vaultwarden
     source_id = Column(String(256), nullable=True)  # external ID for sync
     created_at = Column(DateTime, default=datetime.utcnow)

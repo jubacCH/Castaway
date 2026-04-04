@@ -19,6 +19,10 @@
 {% block topbar_right %}
 <span class="text-blue-500 font-bold font-headline">Connections</span>
 {% if connections %}
+<button id="refreshStatusBtn" class="bg-green-500/10 hover:bg-green-500/20 text-green-400 px-3 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5">
+    <span class="material-symbols-outlined text-[16px]">wifi_find</span>
+    Check Status
+</button>
 <button id="refreshScreenshotsBtn" class="bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 px-3 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5">
     <span class="material-symbols-outlined text-[16px]">photo_camera</span>
     Refresh Previews
@@ -46,13 +50,12 @@
         {% for item in connections %}
         <div class="connection-card group bg-slate-900/40 border border-slate-800 hover:border-slate-700 rounded-xl transition-all hover:bg-slate-900/60 flex flex-col overflow-hidden"
              data-name="{{ item.conn.name|lower }}" data-host="{{ item.conn.host|lower }}" data-folder="{{ item.conn.folder_id or '' }}">
-            <!-- Screenshot thumbnail -->
             {% if item.conn.web_url %}
+            <!-- Screenshot thumbnail -->
             <div class="relative w-full aspect-video bg-slate-800/50 overflow-hidden">
                 <img src="/api/connections/{{ item.conn.id }}/screenshot.jpg" alt=""
                      class="w-full h-full object-cover object-top"
                      onerror="this.parentElement.innerHTML='<div class=\'flex items-center justify-center w-full h-full\'><span class=\'material-symbols-outlined text-3xl text-slate-700\'>language</span></div>'">
-                <!-- Hover overlay with actions -->
                 <div class="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <a href="{{ item.conn.web_url }}" target="_blank" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1">
                         <span class="material-symbols-outlined text-[14px]">open_in_new</span> Open Web
@@ -62,6 +65,29 @@
                         <span class="material-symbols-outlined text-[14px]">terminal</span> SSH
                     </a>
                     {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <!-- Connection status panel (SSH-only, no web_url) -->
+            <div class="w-full aspect-video bg-slate-950/60 flex flex-col items-center justify-center px-4 py-3 gap-2">
+                {% if item.conn.is_online is not none %}
+                <div class="flex items-center gap-2">
+                    <div class="w-2.5 h-2.5 rounded-full {% if item.conn.is_online %}bg-success animate-pulse{% else %}bg-red-500{% endif %}"></div>
+                    <span class="text-sm font-semibold {% if item.conn.is_online %}text-success{% else %}text-red-400{% endif %}">
+                        {{ 'Online' if item.conn.is_online else 'Offline' }}
+                    </span>
+                </div>
+                {% else %}
+                <div class="flex items-center gap-2">
+                    <div class="w-2.5 h-2.5 rounded-full bg-slate-600"></div>
+                    <span class="text-sm text-slate-500">Unknown</span>
+                </div>
+                {% endif %}
+                <div class="text-center space-y-1 mt-1">
+                    {% if item.last_session %}
+                    <p class="text-[11px] text-slate-500">Last session: {{ item.last_session.started_at|localtime("%d.%m %H:%M") }}</p>
+                    {% endif %}
+                    <p class="text-[11px] text-slate-600">{{ item.session_count }} session{{ 's' if item.session_count != 1 }}</p>
                 </div>
             </div>
             {% endif %}
@@ -159,6 +185,16 @@ async function deleteConnection(id, name) {
     await apiFetch(`/api/connections/${id}`, { method: 'DELETE' });
     location.reload();
 }
+document.getElementById('refreshStatusBtn')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">sync</span> Checking...';
+    const res = await apiFetch('/api/connections/status/refresh', { method: 'POST' });
+    const data = await res.json();
+    alert(`Online: ${data.online}, Offline: ${data.offline}`);
+    location.reload();
+});
+
 document.getElementById('refreshScreenshotsBtn')?.addEventListener('click', async (e) => {
     const btn = e.currentTarget;
     btn.disabled = true;
