@@ -196,7 +196,6 @@ async def proxy_request(conn_id: int, path: str, request: Request):
 
         if is_js or is_html:
             # Rewrite ALL absolute path string literals ("/..." but not "//...")
-            # Skip if already prefixed with /web/
             def _rewrite_js_path(m):
                 quote = m.group(1)
                 path = m.group(2)
@@ -204,6 +203,30 @@ async def proxy_request(conn_id: int, path: str, request: Request):
                     return m.group(0)
                 return f'{quote}{prefix}{path}{quote}'
             text = re.sub(r'(["\'])(/(?!/)[^"\'\s<>(){}]*?)\1', _rewrite_js_path, text)
+
+        # Inject runtime interceptor AFTER all rewriting is done
+        if is_html:
+            intercept = (
+                "<script>(function(){var P=" + repr(prefix) + ";"
+                "var R=function(u){if(typeof u!=='string')return u;"
+                "if(u.charAt(0)==='/'&&u.charAt(1)!=='/'&&u.indexOf(P+'/')!==0&&u!==P)return P+u;return u;};"
+                "var of=window.fetch;window.fetch=function(i,o){"
+                "if(typeof i==='string')i=R(i);else if(i&&i.url)i=new Request(R(i.url),i);"
+                "return of.call(this,i,o);};"
+                "var oo=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u){"
+                "arguments[1]=R(u);return oo.apply(this,arguments);};"
+                "var ow=window.WebSocket;window.WebSocket=function(u,p){"
+                "try{var x=new URL(u,window.location.href);"
+                "if(x.pathname.charAt(0)==='/'&&x.pathname.indexOf(P+'/')!==0){x.pathname=P+x.pathname;u=x.toString();}}catch(e){}"
+                "return p?new ow(u,p):new ow(u);};window.WebSocket.prototype=ow.prototype;"
+                "window.WebSocket.CONNECTING=ow.CONNECTING;window.WebSocket.OPEN=ow.OPEN;"
+                "window.WebSocket.CLOSING=ow.CLOSING;window.WebSocket.CLOSED=ow.CLOSED;"
+                "})();</script>"
+            )
+            if "<head>" in text:
+                text = text.replace("<head>", "<head>" + intercept, 1)
+            elif re.search(r'<head[^>]*>', text):
+                text = re.sub(r'(<head[^>]*>)', lambda m: m.group(1) + intercept, text, count=1)
 
         content = text.encode("utf-8")
         response_headers.pop("content-length", None)
