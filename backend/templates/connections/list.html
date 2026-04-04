@@ -18,6 +18,12 @@
 
 {% block topbar_right %}
 <span class="text-blue-500 font-bold font-headline">Connections</span>
+{% if connections %}
+<button id="deleteAllBtn" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5">
+    <span class="material-symbols-outlined text-[16px]">delete_sweep</span>
+    Delete All
+</button>
+{% endif %}
 <a href="/connections/new" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold active:scale-95 transition-transform flex items-center gap-2 text-sm">
     <span class="material-symbols-outlined text-[18px]">add</span>
     New Connection
@@ -123,6 +129,13 @@ async function deleteConnection(id, name) {
     await apiFetch(`/api/connections/${id}`, { method: 'DELETE' });
     location.reload();
 }
+document.getElementById('deleteAllBtn')?.addEventListener('click', async () => {
+    if (!confirm('Delete ALL connections? This cannot be undone.')) return;
+    const res = await apiFetch('/api/connections', { method: 'DELETE' });
+    const data = await res.json();
+    if (data.ok) location.reload();
+});
+
 document.getElementById('connectionGrid')?.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;

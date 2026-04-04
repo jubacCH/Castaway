@@ -191,6 +191,23 @@ async def delete_connection(request: Request, conn_id: int, db: AsyncSession = D
     return {"ok": True}
 
 
+@router.delete("")
+async def delete_all_connections(request: Request, db: AsyncSession = Depends(get_db)):
+    user = _require_user(request)
+    if not user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    result = await db.execute(
+        select(SSHConnection).where(SSHConnection.user_id == user.id)
+    )
+    conns = result.scalars().all()
+    count = len(conns)
+    for conn in conns:
+        await db.delete(conn)
+    await db.commit()
+    return {"ok": True, "deleted": count}
+
+
 @router.post("/{conn_id}/test")
 async def test_connection(request: Request, conn_id: int, db: AsyncSession = Depends(get_db)):
     """Test SSH connectivity to a saved connection."""
