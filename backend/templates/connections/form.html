@@ -71,15 +71,7 @@
                         class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all">
                 </div>
                 <div class="col-span-2">
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label class="text-xs text-slate-400 font-label">Password</label>
-                        {% if connection and connection.encrypted_password %}
-                        <label class="flex items-center gap-1.5 cursor-pointer">
-                            <input type="checkbox" name="clear_password" class="rounded bg-slate-700 border-slate-600 text-red-500 focus:ring-red-500">
-                            <span class="text-xs text-red-400">Clear</span>
-                        </label>
-                        {% endif %}
-                    </div>
+                    <label class="block text-xs text-slate-400 mb-1.5 font-label">Password</label>
                     <input type="password" name="password" placeholder="{{ '(unchanged)' if connection and connection.encrypted_password else '' }}"
                         class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all">
                 </div>
@@ -122,6 +114,12 @@
                 {{ 'Save Changes' if connection else 'Create Connection' }}
             </button>
             <a href="/connections" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors">Cancel</a>
+            {% if connection and connection.encrypted_password %}
+            <button type="button" id="clearCredsBtn" class="px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg font-semibold transition-colors flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">delete_sweep</span>
+                Clear Credentials
+            </button>
+            {% endif %}
         </div>
     </form>
 </div>
@@ -140,7 +138,7 @@ document.getElementById('connForm').addEventListener('submit', async (e) => {
         name: form.name.value, host: form.host.value, port: parseInt(form.port.value),
         protocol: form.protocol.value, auth_method: form.auth_method.value,
         username: form.username.value || null,
-        password: form.clear_password?.checked ? '' : (form.password.value || null),
+        password: form.password.value || null,
         private_key: form.private_key.value || null,
         folder_id: form.folder_id.value ? parseInt(form.folder_id.value) : null,
         notes: form.notes.value || null,
@@ -152,5 +150,19 @@ document.getElementById('connForm').addEventListener('submit', async (e) => {
     if (data.error) { error.textContent = data.error; error.classList.remove('hidden'); }
     else { window.location.href = '/connections'; }
 });
+
+const clearBtn = document.getElementById('clearCredsBtn');
+if (clearBtn) {
+    clearBtn.addEventListener('click', async () => {
+        if (!confirm('Clear stored username and password?')) return;
+        const res = await apiFetch(`/api/connections/${connId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ password: '', username: '' }),
+        });
+        const data = await res.json();
+        if (data.error) alert(data.error);
+        else window.location.href = '/connections';
+    });
+}
 </script>
 {% endblock %}
