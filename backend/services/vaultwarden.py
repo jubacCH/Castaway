@@ -1,10 +1,14 @@
 """Vaultwarden/Bitwarden API client and credential sync service."""
 
+import base64
+import hashlib
 import logging
 from datetime import datetime
 from urllib.parse import urlparse
 
 import httpx
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,6 +17,34 @@ from models.connection import SSHConnection
 from models.vaultwarden_config import VaultwardenConfig
 
 logger = logging.getLogger(__name__)
+
+
+def _hash_password(password: str, email: str, kdf_iterations: int) -> str:
+    """Hash master password using Bitwarden's PBKDF2 flow.
+
+    1. masterKey = PBKDF2-SHA256(password, email, iterations)
+    2. hashedPassword = PBKDF2-SHA256(masterKey, password, 1)
+    3. return base64(hashedPassword)
+    """
+    # Step 1: derive master key
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=email.lower().encode("utf-8"),
+        iterations=kdf_iterations,
+    )
+    master_key = kdf.derive(password.encode("utf-8"))
+
+    # Step 2: hash the master key with the password
+    kdf2 = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=password.encode("utf-8"),
+        iterations=1,
+    )
+    hashed = kdf2.derive(master_key)
+
+    return base64.b64encode(hashed).decode("utf-8")
 
 
 class VaultwardenClient:
@@ -24,14 +56,33 @@ class VaultwardenClient:
         self.password = password
         self._access_token: str | None = None
 
+    async def _get_kdf_iterations(self) -> int:
+        """Get KDF parameters from prelogin endpoint."""
+        url = f"{self.base}/api/accounts/prelogin"
+        async with httpx.AsyncClient(timeout=10, verify=False) as client:
+            resp = await client.post(url, json={"email": self.email})
+            if resp.status_code != 200:
+                # Default to 600000 iterations (Vaultwarden default)
+                return 600000
+            data = resp.json()
+            return data.get("kdfIterations") or data.get("KdfIterations") or 600000
+
     async def authenticate(self) -> None:
-        """Authenticate via Bitwarden Identity API."""
+        """Authenticate via Bitwarden Identity API with pre-hashed password."""
+        # Step 1: Get KDF iterations
+        iterations = await self._get_kdf_iterations()
+        logger.info("Vaultwarden KDF iterations: %d", iterations)
+
+        # Step 2: Hash password client-side (same as browser/CLI)
+        hashed_password = _hash_password(self.password, self.email, iterations)
+
+        # Step 3: Request token
         url = f"{self.base}/identity/connect/token"
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with httpx.AsyncClient(timeout=15, verify=False) as client:
             resp = await client.post(url, data={
                 "grant_type": "password",
                 "username": self.email,
-                "password": self.password,
+                "password": hashed_password,
                 "scope": "api offline_access",
                 "client_id": "web",
                 "deviceType": "10",
@@ -52,7 +103,7 @@ class VaultwardenClient:
     async def sync_vault(self) -> dict:
         """Fetch full vault sync data."""
         url = f"{self.base}/api/sync"
-        async with httpx.AsyncClient(timeout=30) as client:
+        async with httpx.AsyncClient(timeout=30, verify=False) as client:
             resp = await client.get(url, headers=self._headers())
             resp.raise_for_status()
             return resp.json()
