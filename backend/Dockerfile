@@ -16,8 +16,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN groupadd -r castaway && useradd -r -g castaway -d /app -s /sbin/nologin castaway
 COPY --from=builder /install /usr/local
 
-# Install Playwright Chromium browser
-RUN playwright install chromium
+# Install Playwright Chromium browser into /app/.cache so castaway user can access it
+ENV PLAYWRIGHT_BROWSERS_PATH=/app/.playwright
+RUN playwright install chromium && chmod -R 755 /app/.playwright
 
 COPY . .
 RUN chown -R castaway:castaway /app
