@@ -206,28 +206,14 @@ async def auto_match_credentials(
     matches = []
     for conn in connections:
         conn_name_lower = conn.name.lower().strip()
-        conn_host_lower = conn.host.lower().strip()
 
         for cred in credentials:
             match_type = None
-            cred_name_lower = cred["name"].lower()
             cred_hostnames = [h.lower() for h in cred["hostnames"]]
 
-            # Match by connection IP in URI hostnames
-            if conn_host_lower in cred_hostnames:
-                match_type = "ip"
-            # Match by connection name in URI hostnames (e.g. auth.b8n.ch)
-            elif conn_name_lower in cred_hostnames:
+            # Simple: connection name matches a URI hostname
+            if conn_name_lower in cred_hostnames:
                 match_type = "hostname"
-            # Match by URI hostname contained in connection name
-            elif any(h in conn_name_lower for h in cred_hostnames if h):
-                match_type = "hostname_partial"
-            # Match by connection name contained in credential name
-            elif conn_name_lower and len(conn_name_lower) > 3 and conn_name_lower in cred_name_lower:
-                match_type = "name"
-            # Match by credential name contained in connection name
-            elif cred_name_lower and len(cred_name_lower) > 3 and cred_name_lower in conn_name_lower:
-                match_type = "name_reverse"
 
             if match_type:
                 matches.append({
