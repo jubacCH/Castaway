@@ -13,6 +13,7 @@ router = APIRouter(prefix="/api/settings")
 # Default settings
 DEFAULTS = {
     "screenshot_interval_min": "120",
+    "status_interval_min": "5",
 }
 
 
