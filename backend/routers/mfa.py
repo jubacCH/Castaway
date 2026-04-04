@@ -20,19 +20,25 @@ class DisableRequest(BaseModel):
     code: str
 
 
+async def _get_user(request: Request, db: AsyncSession) -> User | None:
+    """Re-load user from current DB session (middleware user is detached)."""
+    ctx_user = getattr(request.state, "current_user", None)
+    if not ctx_user:
+        return None
+    return await db.get(User, ctx_user.id)
+
+
 @router.post("/setup")
 async def setup_mfa(request: Request, db: AsyncSession = Depends(get_db)):
     """Start MFA setup — generate secret and return provisioning URI."""
-    user = getattr(request.state, "current_user", None)
+    user = await _get_user(request, db)
     if not user:
         return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
     if user.mfa_enabled:
         return JSONResponse({"error": "MFA already enabled"}, status_code=400)
 
-    # Generate a fresh secret (not yet enabled, user must verify first)
     secret = generate_secret()
-    # Store temporarily in user (enabled=False until verified)
     user.mfa_secret = secret
     user.mfa_enabled = False
     await db.commit()
@@ -44,7 +50,7 @@ async def setup_mfa(request: Request, db: AsyncSession = Depends(get_db)):
 @router.get("/qrcode.png")
 async def mfa_qrcode(request: Request, db: AsyncSession = Depends(get_db)):
     """Return QR code PNG for current setup secret."""
-    user = getattr(request.state, "current_user", None)
+    user = await _get_user(request, db)
     if not user or not user.mfa_secret:
         return JSONResponse({"error": "No MFA setup in progress"}, status_code=404)
     uri = provisioning_uri(user.mfa_secret, user.username)
@@ -55,7 +61,7 @@ async def mfa_qrcode(request: Request, db: AsyncSession = Depends(get_db)):
 @router.post("/verify")
 async def verify_mfa(request: Request, body: VerifyRequest, db: AsyncSession = Depends(get_db)):
     """Verify TOTP code and enable MFA."""
-    user = getattr(request.state, "current_user", None)
+    user = await _get_user(request, db)
     if not user:
         return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
@@ -73,7 +79,7 @@ async def verify_mfa(request: Request, body: VerifyRequest, db: AsyncSession = D
 @router.post("/disable")
 async def disable_mfa(request: Request, body: DisableRequest, db: AsyncSession = Depends(get_db)):
     """Disable MFA — requires current TOTP code."""
-    user = getattr(request.state, "current_user", None)
+    user = await _get_user(request, db)
     if not user:
         return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
@@ -90,8 +96,8 @@ async def disable_mfa(request: Request, body: DisableRequest, db: AsyncSession =
 
 
 @router.get("/status")
-async def mfa_status(request: Request):
-    user = getattr(request.state, "current_user", None)
+async def mfa_status(request: Request, db: AsyncSession = Depends(get_db)):
+    user = await _get_user(request, db)
     if not user:
         return JSONResponse({"error": "Unauthorized"}, status_code=401)
     return {"enabled": user.mfa_enabled}
