@@ -45,6 +45,16 @@
         </div>
     </div>
 
+    <!-- Danger Zone -->
+    <div class="bg-slate-900/40 border border-red-500/20 rounded-xl p-6">
+        <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider font-label mb-1">Danger Zone</h3>
+        <p class="text-xs text-slate-500 mb-4">Destructive actions that cannot be undone</p>
+        <button id="deleteAllBtn" class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px]">delete_sweep</span>
+            Delete All Connections
+        </button>
+    </div>
+
     <!-- About -->
     <div class="bg-slate-900/40 border border-slate-800 rounded-xl p-6">
         <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider font-label mb-3">About</h3>
@@ -98,6 +108,13 @@ document.getElementById('refreshNowBtn').addEventListener('click', async (e) => 
     const data = await res.json();
     btn.disabled = false;
     status.textContent = `Done: ${data.captured} captured, ${data.failed} failed`;
+});
+
+document.getElementById('deleteAllBtn').addEventListener('click', async () => {
+    if (!confirm('Delete ALL connections? This cannot be undone.')) return;
+    const res = await apiFetch('/api/connections/all', { method: 'DELETE' });
+    const data = await res.json();
+    if (data.ok) alert(`Deleted ${data.deleted} connections`);
 });
 
 loadSettings();

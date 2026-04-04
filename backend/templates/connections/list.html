@@ -23,10 +23,6 @@
     <span class="material-symbols-outlined text-[16px]">photo_camera</span>
     Refresh Previews
 </button>
-<button id="deleteAllBtn" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5">
-    <span class="material-symbols-outlined text-[16px]">delete_sweep</span>
-    Delete All
-</button>
 {% endif %}
 <a href="/connections/new" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold active:scale-95 transition-transform flex items-center gap-2 text-sm">
     <span class="material-symbols-outlined text-[18px]">add</span>
@@ -171,13 +167,6 @@ document.getElementById('refreshScreenshotsBtn')?.addEventListener('click', asyn
     const data = await res.json();
     alert(`Captured: ${data.captured}, Failed: ${data.failed}`);
     location.reload();
-});
-
-document.getElementById('deleteAllBtn')?.addEventListener('click', async () => {
-    if (!confirm('Delete ALL connections? This cannot be undone.')) return;
-    const res = await apiFetch('/api/connections/all', { method: 'DELETE' });
-    const data = await res.json();
-    if (data.ok) location.reload();
 });
 
 document.getElementById('connectionGrid')?.addEventListener('click', (e) => {
