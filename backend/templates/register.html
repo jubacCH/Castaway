@@ -2,37 +2,43 @@
 {% block title %}Register — Castaway{% endblock %}
 
 {% block fullpage %}
-<div class="min-h-screen flex items-center justify-center bg-slate-950">
-    <div class="w-full max-w-sm">
+<div class="min-h-screen flex items-center justify-center bg-slate-950 relative overflow-hidden">
+    <div class="absolute inset-0 opacity-[0.03]" style="background-image: repeating-linear-gradient(0deg, #3b82f6 0px, transparent 1px, transparent 60px), repeating-linear-gradient(90deg, #3b82f6 0px, transparent 1px, transparent 60px);"></div>
+
+    <div class="w-full max-w-sm relative z-10">
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-white">Castaway</h1>
-            <p class="text-sm text-slate-500 mt-1">
+            <div class="inline-flex p-3 bg-blue-500/10 rounded-xl mb-4">
+                <span class="material-symbols-outlined text-blue-500 text-4xl" style="font-variation-settings: 'FILL' 1;">terminal</span>
+            </div>
+            <h1 class="text-3xl font-bold text-white font-headline">Castaway</h1>
+            <p class="text-sm text-slate-500 mt-1 font-label">
                 {% if first_user %}Create your admin account{% else %}Create new user{% endif %}
             </p>
         </div>
-        <div class="bg-slate-900 rounded-xl border border-slate-800 p-6">
-            <h2 class="text-lg font-semibold text-white mb-4">
+        <div class="bg-slate-900/60 backdrop-blur-sm rounded-xl border border-slate-800 p-6">
+            <h2 class="text-lg font-semibold text-white mb-5 font-headline">
                 {% if first_user %}Setup{% else %}Register{% endif %}
             </h2>
             <div id="error" class="hidden mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm"></div>
             <form id="registerForm" class="space-y-4">
                 <div>
-                    <label class="block text-sm text-slate-400 mb-1">Username</label>
+                    <label class="block text-xs text-slate-400 mb-1.5 font-label uppercase tracking-wider">Username</label>
                     <input type="text" name="username" required autofocus
-                        class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        class="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all">
                 </div>
                 <div>
-                    <label class="block text-sm text-slate-400 mb-1">Email (optional)</label>
+                    <label class="block text-xs text-slate-400 mb-1.5 font-label uppercase tracking-wider">Email (optional)</label>
                     <input type="email" name="email"
-                        class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        class="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all">
                 </div>
                 <div>
-                    <label class="block text-sm text-slate-400 mb-1">Password</label>
+                    <label class="block text-xs text-slate-400 mb-1.5 font-label uppercase tracking-wider">Password</label>
                     <input type="password" name="password" required minlength="8"
-                        class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        class="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all">
                 </div>
                 <button type="submit"
-                    class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors">
+                    class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-colors active:scale-[0.98] flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">person_add</span>
                     {% if first_user %}Create Admin Account{% else %}Register{% endif %}
                 </button>
             </form>
@@ -53,23 +59,14 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     const form = e.target;
     const error = document.getElementById('error');
     error.classList.add('hidden');
-
     const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            username: form.username.value,
-            email: form.email.value || null,
-            password: form.password.value,
-        }),
+        body: JSON.stringify({ username: form.username.value, email: form.email.value || null, password: form.password.value }),
     });
     const data = await res.json();
-    if (data.ok) {
-        window.location.href = '/connections';
-    } else {
-        error.textContent = data.error || 'Registration failed';
-        error.classList.remove('hidden');
-    }
+    if (data.ok) { window.location.href = '/connections'; }
+    else { error.textContent = data.error || 'Registration failed'; error.classList.remove('hidden'); }
 });
 </script>
 {% endblock %}
