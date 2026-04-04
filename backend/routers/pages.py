@@ -168,6 +168,17 @@ async def users_page(request: Request):
     })
 
 
+@router.get("/settings")
+async def settings_page(request: Request):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.role != "admin":
+        return RedirectResponse(url="/connections", status_code=302)
+    return templates.TemplateResponse("settings/general.html", {
+        "request": request,
+        "user": user,
+    })
+
+
 @router.get("/settings/phpipam")
 async def phpipam_page(request: Request):
     user = getattr(request.state, "current_user", None)
