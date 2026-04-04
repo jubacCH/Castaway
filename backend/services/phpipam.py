@@ -113,11 +113,11 @@ async def preview_hosts(config: PhpIpamConfig) -> list[dict]:
         ip = (addr.get("ip") or "").strip()
         if not ip:
             continue
-        ssh_flag = (addr.get("custom_SSH") or "").strip().lower()
+        ssh_flag = str(addr.get("custom_SSH") or "").strip().lower()
         if ssh_flag not in ("yes", "1", "true"):
             continue
         name = (addr.get("hostname") or addr.get("description") or ip).strip() or ip
-        port_web = (addr.get("custom_Port_Web") or "").strip()
+        port_web = str(addr.get("custom_Port_Web") or "").strip()
         hosts.append({
             "ip": ip,
             "hostname": name,
@@ -172,7 +172,7 @@ async def sync_hosts(db: AsyncSession, config: PhpIpamConfig, user_id: int) -> d
             continue
 
         # Only import hosts with custom_SSH = "Yes"
-        ssh_flag = (addr.get("custom_SSH") or "").strip().lower()
+        ssh_flag = str(addr.get("custom_SSH") or "").strip().lower()
         if ssh_flag not in ("yes", "1", "true"):
             skipped += 1
             continue
@@ -182,7 +182,7 @@ async def sync_hosts(db: AsyncSession, config: PhpIpamConfig, user_id: int) -> d
 
         # Build web_url from hostname + custom_Port_Web
         web_url = None
-        port_web = (addr.get("custom_Port_Web") or "").strip()
+        port_web = str(addr.get("custom_Port_Web") or "").strip()
         if port_web and name and not name.replace(".", "").isdigit() and "." in name:
             web_url = f"https://{name}:{port_web}"
         elif port_web and name:
