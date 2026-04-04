@@ -286,11 +286,11 @@ async def auto_match_credentials(
 
         for cred in ssh_creds:
             match_type = None
-            cred_hostnames = [h.lower() for h in cred["hostnames"]]
+            cred_name_lower = cred["name"].lower()
 
-            # Simple: connection name matches a URI hostname
-            if conn_name_lower in cred_hostnames:
-                match_type = "hostname"
+            # Check if connection FQDN appears in the vault entry name
+            if conn_name_lower and conn_name_lower in cred_name_lower:
+                match_type = "name"
 
             if match_type:
                 matches.append({
