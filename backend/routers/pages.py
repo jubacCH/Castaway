@@ -60,13 +60,25 @@ async def connections_page(request: Request, db: AsyncSession = Depends(get_db))
         select(Tag).where(Tag.user_id == user.id).order_by(Tag.name)
     )).scalars().all()
 
-    # Attach tags to connections
+    # Attach tags + session stats to connections
+    from models.session_log import SessionLog
     conn_list = []
     for conn in connections:
         tag_rows = (await db.execute(
             select(Tag).join(connection_tags).where(connection_tags.c.connection_id == conn.id)
         )).scalars().all()
-        conn_list.append({"conn": conn, "tags": tag_rows})
+        session_count = (await db.execute(
+            select(func.count()).select_from(SessionLog).where(SessionLog.connection_id == conn.id)
+        )).scalar() or 0
+        last_session = (await db.execute(
+            select(SessionLog).where(SessionLog.connection_id == conn.id)
+            .order_by(SessionLog.started_at.desc()).limit(1)
+        )).scalar_one_or_none()
+        conn_list.append({
+            "conn": conn, "tags": tag_rows,
+            "session_count": session_count,
+            "last_session": last_session,
+        })
 
     return templates.TemplateResponse("connections/list.html", {
         "request": request,

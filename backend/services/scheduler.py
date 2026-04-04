@@ -43,18 +43,25 @@ async def _screenshot_loop():
                 await asyncio.sleep(60)
                 continue
 
-            logger.info("Screenshot refresh starting (interval=%dmin)", interval_min)
+            logger.info("Scheduled refresh starting (interval=%dmin)", interval_min)
 
             from services.screenshots import refresh_all_screenshots
+            from services.status_check import check_all_connections
 
             # Refresh for all users
             async with AsyncSessionLocal() as db:
                 users = (await db.execute(select(User))).scalars().all()
 
             for user in users:
+                # Status checks
+                async with AsyncSessionLocal() as db:
+                    status = await check_all_connections(db, user.id)
+                    logger.info("Status check for %s: %d online, %d offline",
+                                user.username, status["online"], status["offline"])
+                # Screenshots
                 async with AsyncSessionLocal() as db:
                     result = await refresh_all_screenshots(db, user.id)
-                    logger.info("Screenshots for user %s: captured=%d failed=%d",
+                    logger.info("Screenshots for %s: captured=%d failed=%d",
                                 user.username, result["captured"], result["failed"])
 
         except Exception as e:
