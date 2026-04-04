@@ -24,6 +24,7 @@ class SSHConnection(Base):
     key_passphrase = Column(Text, nullable=True)  # Fernet-encrypted
     notes = Column(Text, nullable=True)
     jump_host_id = Column(Integer, ForeignKey("connections.id", ondelete="SET NULL"), nullable=True)
+    web_url = Column(String(512), nullable=True)  # optional web interface URL
     source = Column(String(32), default="manual")  # manual | phpipam | vaultwarden
     source_id = Column(String(256), nullable=True)  # external ID for sync
     created_at = Column(DateTime, default=datetime.utcnow)

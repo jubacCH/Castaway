@@ -1,7 +1,7 @@
 """Connection CRUD API routes."""
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,6 +32,7 @@ def _conn_to_dict(conn: SSHConnection, tags: list[dict] | None = None) -> dict:
         "folder_id": conn.folder_id,
         "notes": conn.notes,
         "jump_host_id": conn.jump_host_id,
+        "web_url": conn.web_url,
         "source": conn.source,
         "source_id": conn.source_id,
         "created_at": str(conn.created_at) if conn.created_at else None,
@@ -98,6 +99,7 @@ async def create_connection(
         folder_id=body.folder_id,
         notes=body.notes,
         jump_host_id=body.jump_host_id,
+        web_url=body.web_url,
     )
     if body.password:
         conn.encrypted_password = encrypt_value(body.password)
@@ -116,6 +118,30 @@ async def create_connection(
 
     await db.commit()
     return _conn_to_dict(conn)
+
+
+@router.delete("/all")
+async def delete_all_connections(request: Request, db: AsyncSession = Depends(get_db)):
+    user = _require_user(request)
+    if not user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    result = await db.execute(select(SSHConnection).where(SSHConnection.user_id == user.id))
+    conns = result.scalars().all()
+    count = len(conns)
+    for conn in conns:
+        await db.delete(conn)
+    await db.commit()
+    return {"ok": True, "deleted": count}
+
+
+@router.post("/screenshots/refresh")
+async def refresh_screenshots(request: Request, db: AsyncSession = Depends(get_db)):
+    user = _require_user(request)
+    if not user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    from services.screenshots import refresh_all_screenshots
+    result = await refresh_all_screenshots(db, user.id)
+    return result
 
 
 @router.get("/{conn_id}")
@@ -151,7 +177,7 @@ async def update_connection(
     if not conn or (conn.user_id != user.id and user.role != "admin"):
         return JSONResponse({"error": "Not found"}, status_code=404)
 
-    for field in ("name", "host", "port", "protocol", "auth_method", "folder_id", "notes", "jump_host_id"):
+    for field in ("name", "host", "port", "protocol", "auth_method", "folder_id", "notes", "jump_host_id", "web_url"):
         val = getattr(body, field, None)
         if val is not None:
             setattr(conn, field, val)
@@ -191,23 +217,6 @@ async def delete_connection(request: Request, conn_id: int, db: AsyncSession = D
     return {"ok": True}
 
 
-@router.delete("")
-async def delete_all_connections(request: Request, db: AsyncSession = Depends(get_db)):
-    user = _require_user(request)
-    if not user:
-        return JSONResponse({"error": "Unauthorized"}, status_code=401)
-
-    result = await db.execute(
-        select(SSHConnection).where(SSHConnection.user_id == user.id)
-    )
-    conns = result.scalars().all()
-    count = len(conns)
-    for conn in conns:
-        await db.delete(conn)
-    await db.commit()
-    return {"ok": True, "deleted": count}
-
-
 @router.post("/{conn_id}/test")
 async def test_connection(request: Request, conn_id: int, db: AsyncSession = Depends(get_db)):
     """Test SSH connectivity to a saved connection."""
@@ -244,3 +253,44 @@ async def test_connection(request: Request, conn_id: int, db: AsyncSession = Dep
             return {"ok": True, "message": "Connection successful"}
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=200)
+
+
+@router.get("/{conn_id}/screenshot.jpg")
+async def get_screenshot(request: Request, conn_id: int, db: AsyncSession = Depends(get_db)):
+    """Serve cached screenshot image."""
+    user = _require_user(request)
+    if not user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    conn = await db.get(SSHConnection, conn_id)
+    if not conn or (conn.user_id != user.id and user.role != "admin"):
+        return JSONResponse({"error": "Not found"}, status_code=404)
+
+    from services.screenshots import screenshot_path
+    path = screenshot_path(conn.id)
+    if not path.exists():
+        return JSONResponse({"error": "No screenshot"}, status_code=404)
+
+    return FileResponse(path, media_type="image/jpeg")
+
+
+@router.post("/{conn_id}/screenshot")
+async def capture_screenshot_endpoint(request: Request, conn_id: int,
+                                      db: AsyncSession = Depends(get_db)):
+    """Capture screenshot for a single connection."""
+    user = _require_user(request)
+    if not user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    conn = await db.get(SSHConnection, conn_id)
+    if not conn or (conn.user_id != user.id and user.role != "admin"):
+        return JSONResponse({"error": "Not found"}, status_code=404)
+
+    if not conn.web_url:
+        return JSONResponse({"error": "No web URL configured"}, status_code=400)
+
+    from services.screenshots import capture_for_connection
+    ok = await capture_for_connection(db, conn.id)
+    return {"ok": ok}
+
+

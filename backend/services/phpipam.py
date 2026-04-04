@@ -168,6 +168,11 @@ async def sync_hosts(db: AsyncSession, config: PhpIpamConfig, user_id: int) -> d
         name = (addr.get("hostname") or addr.get("description") or ip).strip() or ip
         source_id = str(addr.get("id", ip))
 
+        # Derive web_url from hostname (only if it looks like a FQDN, not a bare IP)
+        web_url = None
+        if name and not name.replace(".", "").isdigit() and "." in name:
+            web_url = f"https://{name}"
+
         try:
             if source_id in existing:
                 conn = existing[source_id]
@@ -177,6 +182,9 @@ async def sync_hosts(db: AsyncSession, config: PhpIpamConfig, user_id: int) -> d
                     changed = True
                 if conn.name != name[:128]:
                     conn.name = name[:128]
+                    changed = True
+                if web_url and not conn.web_url:
+                    conn.web_url = web_url
                     changed = True
                 if changed:
                     updated += 1
@@ -192,6 +200,7 @@ async def sync_hosts(db: AsyncSession, config: PhpIpamConfig, user_id: int) -> d
                     auth_method="password",
                     source="phpipam",
                     source_id=source_id,
+                    web_url=web_url,
                 ))
                 added += 1
         except Exception as exc:
