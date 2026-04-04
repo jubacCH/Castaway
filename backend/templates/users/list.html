@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Users — Castaway{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-3xl">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-xl font-semibold text-white">Users</h2>
+            <p class="text-sm text-slate-500">Manage user accounts</p>
+        </div>
+        <button onclick="showAddForm()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
+            + Add User
+        </button>
+    </div>
+
+    <!-- Add/Edit Form (hidden by default) -->
+    <div id="userForm" class="hidden bg-slate-900 border border-slate-800 rounded-lg p-5 mb-6">
+        <h3 class="text-sm font-semibold text-white mb-4" id="formTitle">Add User</h3>
+        <div id="formError" class="hidden mb-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm"></div>
+        <form id="uForm" class="space-y-3">
+            <input type="hidden" name="user_id" value="">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Username</label>
+                    <input type="text" name="username" required
+                        class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Password</label>
+                    <input type="password" name="password" minlength="8"
+                        class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Email</label>
+                    <input type="email" name="email"
+                        class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Role</label>
+                    <select name="role"
+                        class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">Save</button>
+                <button type="button" onclick="hideForm()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition-colors">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- User List -->
+    <div id="usersList"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ request.state.csp_nonce }}">
+async function loadUsers() {
+    const res = await apiFetch('/api/users');
+    const data = await res.json();
+    const el = document.getElementById('usersList');
+
+    if (!data.users || data.users.length === 0) {
+        el.innerHTML = '<p class="text-slate-500 text-sm">No users</p>';
+        return;
+    }
+
+    el.innerHTML = data.users.map(u => `
+        <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 mb-2">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-sm font-medium text-white">
+                        ${u.username[0].toUpperCase()}
+                    </div>
+                    <div>
+                        <span class="font-medium text-white">${u.username}</span>
+                        <span class="ml-2 px-1.5 py-0.5 text-[10px] rounded ${u.role === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-700 text-slate-400'}">${u.role}</span>
+                        ${!u.is_active ? '<span class="ml-1 px-1.5 py-0.5 text-[10px] rounded bg-red-500/20 text-red-400">disabled</span>' : ''}
+                        <div class="text-xs text-slate-500">${u.email || ''}</div>
+                    </div>
+                </div>
+                <div class="flex gap-1">
+                    <button onclick="toggleActive(${u.id}, ${!u.is_active})" class="px-2 py-1 text-xs ${u.is_active ? 'bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30' : 'bg-green-600/20 text-green-400 hover:bg-green-600/30'} rounded transition-colors">
+                        ${u.is_active ? 'Disable' : 'Enable'}
+                    </button>
+                    <button onclick="deleteUser(${u.id}, '${u.username}')" class="px-2 py-1 text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded transition-colors">Delete</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function showAddForm() {
+    document.getElementById('userForm').classList.remove('hidden');
+    document.getElementById('formTitle').textContent = 'Add User';
+    document.getElementById('uForm').reset();
+    document.getElementById('uForm').user_id.value = '';
+    document.getElementById('uForm').username.disabled = false;
+}
+
+function hideForm() {
+    document.getElementById('userForm').classList.add('hidden');
+    document.getElementById('formError').classList.add('hidden');
+}
+
+document.getElementById('uForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const error = document.getElementById('formError');
+    error.classList.add('hidden');
+
+    const body = {
+        username: form.username.value,
+        password: form.password.value,
+        email: form.email.value || null,
+        role: form.role.value,
+    };
+
+    const userId = form.user_id.value;
+    const url = userId ? `/api/users/${userId}` : '/api/users';
+    const method = userId ? 'PUT' : 'POST';
+
+    const res = await apiFetch(url, { method, body: JSON.stringify(body) });
+    const data = await res.json();
+
+    if (data.error) {
+        error.textContent = data.error;
+        error.classList.remove('hidden');
+    } else {
+        hideForm();
+        loadUsers();
+    }
+});
+
+async function toggleActive(id, active) {
+    await apiFetch(`/api/users/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ is_active: active }),
+    });
+    loadUsers();
+}
+
+async function deleteUser(id, name) {
+    if (!confirm(`Delete user "${name}"? This cannot be undone.`)) return;
+    const res = await apiFetch(`/api/users/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.error) alert(data.error);
+    else loadUsers();
+}
+
+loadUsers();
+</script>
+{% endblock %}

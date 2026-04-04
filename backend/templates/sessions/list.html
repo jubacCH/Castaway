@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Session Log — Castaway{% endblock %}
+
+{% block content %}
+<div class="p-6">
+    <h2 class="text-xl font-semibold text-white mb-1">Session Log</h2>
+    <p class="text-sm text-slate-500 mb-6">SSH session audit trail</p>
+
+    <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-slate-800 text-slate-400 text-left">
+                    <th class="px-4 py-3 font-medium">User</th>
+                    <th class="px-4 py-3 font-medium">Connection</th>
+                    <th class="px-4 py-3 font-medium">Host</th>
+                    <th class="px-4 py-3 font-medium">Started</th>
+                    <th class="px-4 py-3 font-medium">Duration</th>
+                    <th class="px-4 py-3 font-medium">IP</th>
+                    <th class="px-4 py-3 font-medium">Traffic</th>
+                </tr>
+            </thead>
+            <tbody id="sessionsBody">
+                <tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="flex items-center justify-between mt-4">
+        <span id="totalInfo" class="text-xs text-slate-500"></span>
+        <div class="flex gap-2">
+            <button onclick="prevPage()" id="prevBtn" class="px-3 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded transition-colors disabled:opacity-50" disabled>Prev</button>
+            <button onclick="nextPage()" id="nextBtn" class="px-3 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded transition-colors disabled:opacity-50">Next</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ request.state.csp_nonce }}">
+let page = 0;
+const limit = 50;
+
+function formatDuration(sec) {
+    if (sec == null) return 'active';
+    if (sec < 60) return `${sec}s`;
+    if (sec < 3600) return `${Math.floor(sec/60)}m ${sec%60}s`;
+    return `${Math.floor(sec/3600)}h ${Math.floor((sec%3600)/60)}m`;
+}
+
+function formatBytes(b) {
+    if (!b) return '0 B';
+    if (b < 1024) return `${b} B`;
+    if (b < 1048576) return `${(b/1024).toFixed(1)} KB`;
+    return `${(b/1048576).toFixed(1)} MB`;
+}
+
+async function loadSessions() {
+    const res = await apiFetch(`/api/sessions?limit=${limit}&offset=${page * limit}`);
+    const data = await res.json();
+    const body = document.getElementById('sessionsBody');
+
+    if (!data.sessions || data.sessions.length === 0) {
+        body.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">No sessions recorded yet</td></tr>';
+        return;
+    }
+
+    body.innerHTML = data.sessions.map(s => `
+        <tr class="border-t border-slate-800 hover:bg-slate-800/50">
+            <td class="px-4 py-2 text-white">${s.user}</td>
+            <td class="px-4 py-2 text-slate-300">${s.connection_name}</td>
+            <td class="px-4 py-2 text-slate-500 text-xs">${s.connection_host}</td>
+            <td class="px-4 py-2 text-slate-400 text-xs">${s.started_at || '-'}</td>
+            <td class="px-4 py-2">
+                <span class="text-xs ${s.ended_at ? 'text-slate-400' : 'text-green-400'}">${formatDuration(s.duration_sec)}</span>
+            </td>
+            <td class="px-4 py-2 text-slate-500 text-xs">${s.ip_address || '-'}</td>
+            <td class="px-4 py-2 text-slate-500 text-xs">${formatBytes(s.bytes_sent)} / ${formatBytes(s.bytes_recv)}</td>
+        </tr>
+    `).join('');
+
+    document.getElementById('totalInfo').textContent = `${data.total} sessions total`;
+    document.getElementById('prevBtn').disabled = page === 0;
+    document.getElementById('nextBtn').disabled = (page + 1) * limit >= data.total;
+}
+
+function prevPage() { if (page > 0) { page--; loadSessions(); } }
+function nextPage() { page++; loadSessions(); }
+
+loadSessions();
+</script>
+{% endblock %}

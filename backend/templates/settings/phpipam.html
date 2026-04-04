@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}phpIPAM — Castaway{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-4xl">
+    <h2 class="text-xl font-semibold text-white mb-1">phpIPAM Integration</h2>
+    <p class="text-sm text-slate-500 mb-6">Import hosts from phpIPAM as SSH connections</p>
+
+    <!-- Config Form -->
+    <div class="bg-slate-900 border border-slate-800 rounded-lg p-5 mb-6">
+        <h3 class="text-sm font-semibold text-white mb-4">
+            <span id="formTitle">Add phpIPAM Instance</span>
+        </h3>
+        <div id="error" class="hidden mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm"></div>
+        <form id="configForm" class="space-y-4">
+            <input type="hidden" name="config_id" value="">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Name</label>
+                    <input type="text" name="name" required placeholder="Production phpIPAM"
+                        class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">URL</label>
+                    <input type="url" name="url" required placeholder="https://phpipam.local"
+                        class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">App ID</label>
+                    <input type="text" name="app_id" required placeholder="castaway"
+                        class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">App Secret (Token)</label>
+                    <input type="password" name="app_secret" placeholder="For App Code auth"
+                        class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Username (optional)</label>
+                    <input type="text" name="username" placeholder="For User auth"
+                        class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Password (optional)</label>
+                    <input type="password" name="password"
+                        class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="verify_ssl" checked class="rounded bg-slate-800 border-slate-600 text-blue-500">
+                    <span class="text-sm text-slate-300">Verify SSL</span>
+                </label>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">Save</button>
+                <button type="button" onclick="resetForm()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition-colors hidden" id="cancelBtn">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Existing Configs -->
+    <div id="configsList"></div>
+
+    <!-- Preview/Sync Results -->
+    <div id="syncResults" class="hidden mt-6 bg-slate-900 border border-slate-800 rounded-lg p-5">
+        <h3 class="text-sm font-semibold text-white mb-3" id="syncTitle">Sync Results</h3>
+        <div id="syncContent"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ request.state.csp_nonce }}">
+let editingId = null;
+
+async function loadConfigs() {
+    const res = await apiFetch('/api/phpipam/configs');
+    const data = await res.json();
+    const el = document.getElementById('configsList');
+
+    if (!data.configs || data.configs.length === 0) {
+        el.innerHTML = '';
+        return;
+    }
+
+    el.innerHTML = data.configs.map(c => `
+        <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 mb-3">
+            <div class="flex items-center justify-between">
+                <div>
+                    <span class="font-medium text-white">${c.name}</span>
+                    <span class="text-xs text-slate-500 ml-2">${c.url}</span>
+                    <span class="text-xs text-slate-600 ml-2">App: ${c.app_id}</span>
+                    ${c.last_sync_at ? `<span class="text-xs text-slate-600 ml-2">Last sync: ${c.last_sync_at}</span>` : ''}
+                </div>
+                <div class="flex gap-1">
+                    <button onclick="testConfig(${c.id})" class="px-2 py-1 text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 rounded transition-colors">Test</button>
+                    <button onclick="previewSync(${c.id})" class="px-2 py-1 text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 rounded transition-colors">Preview</button>
+                    <button onclick="syncNow(${c.id})" class="px-2 py-1 text-xs bg-green-600/20 text-green-400 hover:bg-green-600/30 rounded transition-colors">Sync Now</button>
+                    <button onclick="deleteConfig(${c.id})" class="px-2 py-1 text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded transition-colors">Delete</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+document.getElementById('configForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const error = document.getElementById('error');
+    error.classList.add('hidden');
+
+    const body = {
+        name: form.name.value,
+        url: form.url.value,
+        app_id: form.app_id.value,
+        app_secret: form.app_secret.value || null,
+        username: form.username.value || null,
+        password: form.password.value || null,
+        verify_ssl: form.verify_ssl.checked,
+    };
+
+    const configId = form.config_id.value;
+    const url = configId ? `/api/phpipam/configs/${configId}` : '/api/phpipam/configs';
+    const method = configId ? 'PUT' : 'POST';
+
+    const res = await apiFetch(url, { method, body: JSON.stringify(body) });
+    const data = await res.json();
+
+    if (data.error) {
+        error.textContent = data.error;
+        error.classList.remove('hidden');
+    } else {
+        resetForm();
+        loadConfigs();
+    }
+});
+
+function resetForm() {
+    const form = document.getElementById('configForm');
+    form.reset();
+    form.config_id.value = '';
+    form.verify_ssl.checked = true;
+    document.getElementById('formTitle').textContent = 'Add phpIPAM Instance';
+    document.getElementById('cancelBtn').classList.add('hidden');
+    editingId = null;
+}
+
+async function testConfig(id) {
+    const res = await apiFetch(`/api/phpipam/configs/${id}/test`, { method: 'POST' });
+    const data = await res.json();
+    const el = document.getElementById('syncResults');
+    el.classList.remove('hidden');
+    document.getElementById('syncTitle').textContent = 'Connection Test';
+    document.getElementById('syncContent').innerHTML = data.ok
+        ? `<p class="text-green-400">Connected! Found ${data.addresses_total} addresses (${data.addresses_active} active)</p>`
+        : `<p class="text-red-400">Failed: ${data.error}</p>`;
+}
+
+async function previewSync(id) {
+    const res = await apiFetch(`/api/phpipam/configs/${id}/preview`);
+    const data = await res.json();
+    const el = document.getElementById('syncResults');
+    el.classList.remove('hidden');
+    document.getElementById('syncTitle').textContent = `Preview: ${data.count} hosts`;
+
+    if (data.hosts && data.hosts.length > 0) {
+        const rows = data.hosts.slice(0, 50).map(h =>
+            `<tr class="border-t border-slate-800"><td class="py-1 pr-4 text-slate-300">${h.ip}</td><td class="py-1 pr-4 text-slate-400">${h.hostname}</td><td class="py-1 text-slate-500">${h.last_seen || '-'}</td></tr>`
+        ).join('');
+        document.getElementById('syncContent').innerHTML = `
+            <table class="w-full text-sm"><thead><tr class="text-slate-500 text-left"><th class="pr-4 pb-2">IP</th><th class="pr-4 pb-2">Hostname</th><th class="pb-2">Last Seen</th></tr></thead><tbody>${rows}</tbody></table>
+            ${data.count > 50 ? `<p class="mt-2 text-xs text-slate-500">... and ${data.count - 50} more</p>` : ''}`;
+    } else {
+        document.getElementById('syncContent').innerHTML = '<p class="text-slate-500">No active hosts found</p>';
+    }
+}
+
+async function syncNow(id) {
+    const res = await apiFetch(`/api/phpipam/configs/${id}/sync`, { method: 'POST' });
+    const data = await res.json();
+    const el = document.getElementById('syncResults');
+    el.classList.remove('hidden');
+    document.getElementById('syncTitle').textContent = 'Sync Results';
+    document.getElementById('syncContent').innerHTML = `
+        <div class="flex gap-4 text-sm">
+            <span class="text-green-400">Added: ${data.added}</span>
+            <span class="text-blue-400">Updated: ${data.updated}</span>
+            <span class="text-slate-500">Skipped: ${data.skipped}</span>
+            ${data.errors && data.errors.length > 0 ? `<span class="text-red-400">Errors: ${data.errors.length}</span>` : ''}
+        </div>
+        ${data.errors && data.errors.length > 0 ? `<ul class="mt-2 text-xs text-red-400">${data.errors.map(e => `<li>${e}</li>`).join('')}</ul>` : ''}`;
+    loadConfigs();
+}
+
+async function deleteConfig(id) {
+    if (!confirm('Delete this phpIPAM configuration?')) return;
+    await apiFetch(`/api/phpipam/configs/${id}`, { method: 'DELETE' });
+    loadConfigs();
+}
+
+loadConfigs();
+</script>
+{% endblock %}
