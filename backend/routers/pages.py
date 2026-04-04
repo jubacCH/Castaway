@@ -168,17 +168,6 @@ async def users_page(request: Request):
     })
 
 
-@router.get("/settings/import")
-async def import_page(request: Request):
-    user = getattr(request.state, "current_user", None)
-    if not user:
-        return RedirectResponse(url="/login", status_code=302)
-    return templates.TemplateResponse("settings/import.html", {
-        "request": request,
-        "user": user,
-    })
-
-
 @router.get("/settings/phpipam")
 async def phpipam_page(request: Request):
     user = getattr(request.state, "current_user", None)
