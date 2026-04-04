@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}{{ connection.name }} — Castaway{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
+<style>
+    #terminal-container { height: calc(100vh - 3rem); }
+    .xterm { height: 100%; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-full">
+    <div class="flex items-center justify-between px-4 py-2 bg-slate-900 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+            <a href="/connections" class="text-slate-500 hover:text-slate-300 text-sm">&larr;</a>
+            <span class="text-sm font-medium text-white">{{ connection.name }}</span>
+            <span class="text-xs text-slate-500">{{ connection.username }}@{{ connection.host }}:{{ connection.port }}</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <span id="status" class="text-xs text-yellow-400">Connecting...</span>
+            <button onclick="disconnect()" class="px-2 py-1 text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded transition-colors">Disconnect</button>
+        </div>
+    </div>
+    <div id="terminal-container" class="flex-1 bg-black"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js" nonce="{{ request.state.csp_nonce }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js" nonce="{{ request.state.csp_nonce }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.min.js" nonce="{{ request.state.csp_nonce }}"></script>
+<script nonce="{{ request.state.csp_nonce }}">
+const connId = {{ connection.id }};
+const statusEl = document.getElementById('status');
+let ws;
+
+const term = new Terminal({
+    cursorBlink: true,
+    fontSize: 14,
+    fontFamily: '"Cascadia Code", "Fira Code", "JetBrains Mono", monospace',
+    theme: {
+        background: '#000000',
+        foreground: '#e2e8f0',
+        cursor: '#3b82f6',
+        selectionBackground: '#334155',
+    },
+});
+
+const fitAddon = new FitAddon.FitAddon();
+term.loadAddon(fitAddon);
+term.loadAddon(new WebLinksAddon.WebLinksAddon());
+term.open(document.getElementById('terminal-container'));
+fitAddon.fit();
+
+const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+ws = new WebSocket(`${proto}//${location.host}/ws/ssh/${connId}`);
+
+ws.onopen = () => {
+    statusEl.textContent = 'Connected';
+    statusEl.className = 'text-xs text-green-400';
+    // Send initial terminal size
+    ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
+};
+
+ws.onmessage = (e) => {
+    try {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'error') {
+            term.write(`\r\n\x1b[31mError: ${msg.message}\x1b[0m\r\n`);
+            statusEl.textContent = 'Error';
+            statusEl.className = 'text-xs text-red-400';
+            return;
+        }
+        if (msg.type === 'connected') {
+            return;
+        }
+    } catch {}
+    term.write(e.data);
+};
+
+ws.onclose = () => {
+    term.write('\r\n\x1b[33mConnection closed.\x1b[0m\r\n');
+    statusEl.textContent = 'Disconnected';
+    statusEl.className = 'text-xs text-slate-500';
+};
+
+ws.onerror = () => {
+    statusEl.textContent = 'Error';
+    statusEl.className = 'text-xs text-red-400';
+};
+
+term.onData((data) => {
+    if (ws.readyState === WebSocket.OPEN) {
+        ws.send(data);
+    }
+});
+
+window.addEventListener('resize', () => {
+    fitAddon.fit();
+    if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
+    }
+});
+
+function disconnect() {
+    ws.close();
+    window.location.href = '/connections';
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    // Ctrl+Shift+C — copy selection
+    if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        const sel = term.getSelection();
+        if (sel) {
+            navigator.clipboard.writeText(sel);
+            e.preventDefault();
+        }
+    }
+    // Ctrl+Shift+V — paste
+    if (e.ctrlKey && e.shiftKey && e.key === 'V') {
+        navigator.clipboard.readText().then(text => {
+            if (text && ws.readyState === WebSocket.OPEN) ws.send(text);
+        });
+        e.preventDefault();
+    }
+    // Ctrl+Shift+D — disconnect
+    if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        disconnect();
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

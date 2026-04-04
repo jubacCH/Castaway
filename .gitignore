@@ -1,0 +1,20 @@
+# Data / secrets
+/data/
+.env
+
+# Claude Code
+.claude/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+
+# Node (Tailwind build)
+node_modules/
+
+# macOS
+.DS_Store
