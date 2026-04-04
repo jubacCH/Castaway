@@ -90,10 +90,10 @@ async function loadConfigs() {
                     </div>
                 </div>
                 <div class="flex gap-1.5 shrink-0">
-                    <button onclick="testConfig(${c.id})" class="px-2 py-1 text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 rounded transition-colors">Test</button>
-                    <button onclick="showCredentials(${c.id})" class="px-2 py-1 text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 rounded transition-colors">Credentials</button>
-                    <button onclick="autoMatch(${c.id})" class="px-2 py-1 text-xs bg-green-600/20 text-green-400 hover:bg-green-600/30 rounded transition-colors">Auto-Match</button>
-                    <button onclick="deleteConfig(${c.id})" class="px-2 py-1 text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded transition-colors">Delete</button>
+                    <button data-action="test" data-id="${c.id}" class="px-2 py-1 text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 rounded transition-colors">Test</button>
+                    <button data-action="creds" data-id="${c.id}" class="px-2 py-1 text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 rounded transition-colors">Credentials</button>
+                    <button data-action="match" data-id="${c.id}" class="px-2 py-1 text-xs bg-green-600/20 text-green-400 hover:bg-green-600/30 rounded transition-colors">Auto-Match</button>
+                    <button data-action="delete" data-id="${c.id}" class="px-2 py-1 text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded transition-colors">Delete</button>
                 </div>
             </div>
         </div>
@@ -210,7 +210,7 @@ async function autoMatch(id) {
         `).join('');
         document.getElementById('credContent').innerHTML = `
             <table class="w-full mb-4"><thead><tr class="text-xs text-slate-500 font-label uppercase tracking-wider text-left"><th class="pr-4 pb-3"></th><th class="pr-4 pb-3">Connection</th><th class="pr-4 pb-3">Credential</th><th class="pb-3">Match</th></tr></thead><tbody>${rows}</tbody></table>
-            <button onclick="applyMatches(${id})" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-semibold transition-colors active:scale-95">Apply Selected</button>`;
+            <button data-action="apply" data-id="${id}" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-semibold transition-colors active:scale-95">Apply Selected</button>`;
         window._matches = data.matches;
     } else {
         document.getElementById('credContent').innerHTML = `
@@ -249,6 +249,22 @@ async function deleteConfig(id) {
     await apiFetch(`/api/vaultwarden/configs/${id}`, { method: 'DELETE' });
     loadConfigs();
 }
+
+document.getElementById('configsList').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const id = parseInt(btn.dataset.id);
+    switch (btn.dataset.action) {
+        case 'test': testConfig(id); break;
+        case 'creds': showCredentials(id); break;
+        case 'match': autoMatch(id); break;
+        case 'delete': deleteConfig(id); break;
+    }
+});
+document.getElementById('credPanel').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action="apply"]');
+    if (btn) applyMatches(parseInt(btn.dataset.id));
+});
 
 loadConfigs();
 </script>
