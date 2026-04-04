@@ -105,10 +105,10 @@ async function loadConfigs() {
                     </div>
                 </div>
                 <div class="flex gap-1.5 shrink-0">
-                    <button onclick="testConfig(${c.id})" class="px-2 py-1 text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 rounded transition-colors">Test</button>
-                    <button onclick="previewSync(${c.id})" class="px-2 py-1 text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 rounded transition-colors">Preview</button>
-                    <button onclick="syncNow(${c.id})" class="px-2 py-1 text-xs bg-green-600/20 text-green-400 hover:bg-green-600/30 rounded transition-colors">Sync Now</button>
-                    <button onclick="deleteConfig(${c.id})" class="px-2 py-1 text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded transition-colors">Delete</button>
+                    <button data-action="test" data-id="${c.id}" class="px-2 py-1 text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 rounded transition-colors">Test</button>
+                    <button data-action="preview" data-id="${c.id}" class="px-2 py-1 text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 rounded transition-colors">Preview</button>
+                    <button data-action="sync" data-id="${c.id}" class="px-2 py-1 text-xs bg-green-600/20 text-green-400 hover:bg-green-600/30 rounded transition-colors">Sync Now</button>
+                    <button data-action="delete" data-id="${c.id}" class="px-2 py-1 text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded transition-colors">Delete</button>
                 </div>
             </div>
         </div>
@@ -213,6 +213,18 @@ async function deleteConfig(id) {
     await apiFetch(`/api/phpipam/configs/${id}`, { method: 'DELETE' });
     loadConfigs();
 }
+
+document.getElementById('configsList').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const id = parseInt(btn.dataset.id);
+    switch (btn.dataset.action) {
+        case 'test': testConfig(id); break;
+        case 'preview': previewSync(id); break;
+        case 'sync': syncNow(id); break;
+        case 'delete': deleteConfig(id); break;
+    }
+});
 
 loadConfigs();
 </script>

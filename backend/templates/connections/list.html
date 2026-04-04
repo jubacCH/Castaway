@@ -53,10 +53,10 @@
                         <a href="/connections/{{ item.conn.id }}/edit" class="p-1.5 text-slate-500 hover:text-slate-300" title="Edit">
                             <span class="material-symbols-outlined text-[18px]">edit</span>
                         </a>
-                        <button onclick="testConnection({{ item.conn.id }})" class="p-1.5 text-slate-500 hover:text-blue-400" title="Test">
+                        <button data-action="test" data-id="{{ item.conn.id }}" class="p-1.5 text-slate-500 hover:text-blue-400" title="Test">
                             <span class="material-symbols-outlined text-[18px]">bolt</span>
                         </button>
-                        <button onclick="deleteConnection({{ item.conn.id }}, '{{ item.conn.name }}')" class="p-1.5 text-slate-500 hover:text-red-400" title="Delete">
+                        <button data-action="delete" data-id="{{ item.conn.id }}" data-name="{{ item.conn.name }}" class="p-1.5 text-slate-500 hover:text-red-400" title="Delete">
                             <span class="material-symbols-outlined text-[18px]">delete</span>
                         </button>
                     </div>
@@ -123,5 +123,12 @@ async function deleteConnection(id, name) {
     await apiFetch(`/api/connections/${id}`, { method: 'DELETE' });
     location.reload();
 }
+document.getElementById('connectionGrid')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const id = parseInt(btn.dataset.id);
+    if (btn.dataset.action === 'test') testConnection(id);
+    if (btn.dataset.action === 'delete') deleteConnection(id, btn.dataset.name);
+});
 </script>
 {% endblock %}
