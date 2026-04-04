@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 import bcrypt
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -157,6 +158,37 @@ async def me(request: Request):
     if not user:
         return JSONResponse({"user": None}, status_code=401)
     return {"user": {"id": user.id, "username": user.username, "role": user.role or "admin"}}
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.post("/api/auth/change-password")
+async def change_password(request: Request, body: ChangePasswordRequest,
+                          db: AsyncSession = Depends(get_db)):
+    ctx_user = getattr(request.state, "current_user", None)
+    if not ctx_user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    if len(body.new_password) < 8:
+        return JSONResponse({"error": "Password must be at least 8 characters"}, status_code=400)
+
+    # Reload user in current session
+    user = await db.get(User, ctx_user.id)
+    if not user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    # Verify current password
+    if not bcrypt.checkpw(body.current_password.encode(), user.password_hash.encode()):
+        return JSONResponse({"error": "Current password is incorrect"}, status_code=401)
+
+    # Update
+    user.password_hash = bcrypt.hashpw(body.new_password.encode(), bcrypt.gensalt(rounds=12)).decode()
+    await db.commit()
+    logger.info("Password changed for user %s", user.username)
+    return {"ok": True}
 
 
 @router.post("/api/auth/logout")

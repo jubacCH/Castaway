@@ -28,6 +28,32 @@
         </div>
     </div>
 
+    <!-- Change Password -->
+    <div class="bg-slate-900/40 border border-slate-800 rounded-xl p-6">
+        <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider font-label mb-4">Change Password</h3>
+        <div id="pwError" class="hidden mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm"></div>
+        <form id="pwForm" class="space-y-4">
+            <div>
+                <label class="block text-xs text-slate-400 mb-1.5 font-label">Current Password</label>
+                <input type="password" name="current_password" required autocomplete="current-password"
+                    class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-xs text-slate-400 mb-1.5 font-label">New Password</label>
+                <input type="password" name="new_password" required minlength="8" autocomplete="new-password"
+                    class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-xs text-slate-400 mb-1.5 font-label">Confirm New Password</label>
+                <input type="password" name="confirm_password" required minlength="8" autocomplete="new-password"
+                    class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-colors active:scale-95 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px]">lock_reset</span> Change Password
+            </button>
+        </form>
+    </div>
+
     <!-- MFA -->
     <div class="bg-slate-900/40 border border-slate-800 rounded-xl p-6">
         <div class="flex items-center justify-between mb-4">
@@ -140,6 +166,36 @@ document.getElementById('disableMfaBtn').addEventListener('click', async () => {
     if (data.error) { showError(data.error); return; }
     toast('MFA disabled', 'success');
     loadMfaStatus();
+});
+
+// Password change
+document.getElementById('pwForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const err = document.getElementById('pwError');
+    err.classList.add('hidden');
+
+    if (form.new_password.value !== form.confirm_password.value) {
+        err.textContent = 'New passwords do not match';
+        err.classList.remove('hidden');
+        return;
+    }
+
+    const res = await apiFetch('/api/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({
+            current_password: form.current_password.value,
+            new_password: form.new_password.value,
+        }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+        form.reset();
+        toast('Password changed successfully', 'success');
+    } else {
+        err.textContent = data.error || 'Failed to change password';
+        err.classList.remove('hidden');
+    }
 });
 
 loadMfaStatus();
