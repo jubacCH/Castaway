@@ -178,16 +178,36 @@ async def proxy_request(conn_id: int, path: str, request: Request):
     # Rewrite HTML/JS/CSS responses to inject /web/{conn_id} prefix for absolute paths
     content = upstream.content
     content_type = upstream.headers.get("content-type", "").lower()
-    if any(t in content_type for t in ("text/html", "text/css", "application/javascript", "text/javascript")):
+    is_html = "text/html" in content_type
+    is_css = "text/css" in content_type
+    is_js = "javascript" in content_type
+    if is_html or is_css or is_js:
         prefix = f"/web/{conn_id}"
         text = content.decode("utf-8", errors="replace")
-        # Rewrite absolute paths (src/href/url/action="/...") but not "//..." (protocol-rel)
-        # Match: ="/path or ='/path or url(/path) or url("/path)
-        text = re.sub(r'(src|href|action|poster|data-url)="(/(?!/)[^"]*)"', rf'\1="{prefix}\2"', text)
-        text = re.sub(r"(src|href|action|poster|data-url)='(/(?!/)[^']*)'", rf"\1='{prefix}\2'", text)
-        text = re.sub(r'url\(([\'"]?)(/(?!/)[^\'")]*)\1\)', rf'url(\1{prefix}\2\1)', text)
+
+        if is_html:
+            # HTML attributes with absolute paths
+            text = re.sub(r'(src|href|action|poster|data-url)="(/(?!/)[^"]*)"', rf'\1="{prefix}\2"', text)
+            text = re.sub(r"(src|href|action|poster|data-url)='(/(?!/)[^']*)'", rf"\1='{prefix}\2'", text)
+
+        if is_html or is_css:
+            # CSS url() references
+            text = re.sub(r'url\(([\'"]?)(/(?!/)[^\'")]*)\1\)', rf'url(\1{prefix}\2\1)', text)
+
+        if is_js or is_html:
+            # String literals starting with common API/static paths in JS code
+            # "/api/...", "/v1/...", "/v2/...", "/static/...", "/assets/..." etc.
+            for path_prefix in ("/api", "/v1", "/v2", "/static", "/assets", "/public", "/media", "/ws"):
+                text = re.sub(
+                    rf'"({re.escape(path_prefix)}(?:/[^"\s<>]*)?)"',
+                    rf'"{prefix}\1"', text
+                )
+                text = re.sub(
+                    rf"'({re.escape(path_prefix)}(?:/[^'\s<>]*)?)'",
+                    rf"'{prefix}\1'", text
+                )
+
         content = text.encode("utf-8")
-        # Update content-length
         response_headers.pop("content-length", None)
 
     return Response(
