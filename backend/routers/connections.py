@@ -1,11 +1,27 @@
 """Connection CRUD API routes."""
 
+import time
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.base import encrypt_value, get_db
+
+# In-memory cooldown tracker: {(user_id, action): last_timestamp}
+_cooldowns: dict[tuple[int, str], float] = {}
+
+
+def _check_cooldown(user_id: int, action: str, seconds: int) -> int:
+    """Return 0 if allowed, or remaining cooldown seconds."""
+    key = (user_id, action)
+    now = time.time()
+    last = _cooldowns.get(key, 0)
+    elapsed = now - last
+    if elapsed < seconds:
+        return int(seconds - elapsed)
+    _cooldowns[key] = now
+    return 0
 from models.connection import SSHConnection
 from models.tag import Tag, connection_tags
 from schemas.connection import ConnectionCreate, ConnectionOut, ConnectionUpdate
@@ -90,6 +106,19 @@ async def create_connection(
     if not user:
         return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
+    # Validate jump_host belongs to same user
+    if body.jump_host_id:
+        jump = await db.get(SSHConnection, body.jump_host_id)
+        if not jump or jump.user_id != user.id:
+            return JSONResponse({"error": "Invalid jump host"}, status_code=400)
+
+    # Validate folder belongs to user
+    if body.folder_id:
+        from models.folder import Folder
+        folder = await db.get(Folder, body.folder_id)
+        if not folder or folder.user_id != user.id:
+            return JSONResponse({"error": "Invalid folder"}, status_code=400)
+
     conn = SSHConnection(
         user_id=user.id,
         name=body.name,
@@ -141,6 +170,9 @@ async def refresh_status(request: Request, db: AsyncSession = Depends(get_db)):
     user = _require_user(request)
     if not user:
         return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    remaining = _check_cooldown(user.id, "status_refresh", 30)
+    if remaining:
+        return JSONResponse({"error": f"Too frequent. Wait {remaining}s"}, status_code=429)
     from services.status_check import check_all_connections
     result = await check_all_connections(db, user.id)
     return result
@@ -151,6 +183,9 @@ async def refresh_screenshots(request: Request, db: AsyncSession = Depends(get_d
     user = _require_user(request)
     if not user:
         return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    remaining = _check_cooldown(user.id, "screenshots_refresh", 120)
+    if remaining:
+        return JSONResponse({"error": f"Too frequent. Wait {remaining}s"}, status_code=429)
     from services.screenshots import refresh_all_screenshots
     result = await refresh_all_screenshots(db, user.id)
     return result
@@ -188,6 +223,18 @@ async def update_connection(
     conn = await db.get(SSHConnection, conn_id)
     if not conn or (conn.user_id != user.id and user.role != "admin"):
         return JSONResponse({"error": "Not found"}, status_code=404)
+
+    # Validate jump_host_id belongs to same user (if changed)
+    if body.jump_host_id:
+        jump = await db.get(SSHConnection, body.jump_host_id)
+        if not jump or jump.user_id != conn.user_id:
+            return JSONResponse({"error": "Invalid jump host"}, status_code=400)
+    # Validate folder_id belongs to same user
+    if body.folder_id:
+        from models.folder import Folder
+        folder = await db.get(Folder, body.folder_id)
+        if not folder or folder.user_id != conn.user_id:
+            return JSONResponse({"error": "Invalid folder"}, status_code=400)
 
     for field in ("name", "host", "port", "protocol", "auth_method", "folder_id", "notes", "jump_host_id", "web_url"):
         val = getattr(body, field, None)
@@ -264,7 +311,20 @@ async def test_connection(request: Request, conn_id: int, db: AsyncSession = Dep
             result = await ssh_conn.run("echo ok", check=True, timeout=5)
             return {"ok": True, "message": "Connection successful"}
     except Exception as e:
-        return JSONResponse({"ok": False, "error": str(e)}, status_code=200)
+        import logging
+        logging.getLogger(__name__).error("SSH test failed for conn %d: %s", conn_id, e, exc_info=True)
+        msg = str(e).lower()
+        if "auth" in msg or "permission" in msg:
+            friendly = "Authentication failed"
+        elif "timeout" in msg or "timed out" in msg:
+            friendly = "Connection timed out"
+        elif "refused" in msg:
+            friendly = "Connection refused"
+        elif "resolve" in msg or "getaddrinfo" in msg:
+            friendly = "Cannot resolve host"
+        else:
+            friendly = "Connection failed"
+        return JSONResponse({"ok": False, "error": friendly}, status_code=200)
 
 
 @router.get("/{conn_id}/screenshot.jpg")

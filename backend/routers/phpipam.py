@@ -15,6 +15,22 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/phpipam/configs")
 
 
+def _safe_error(e: Exception, context: str) -> str:
+    logger.error("%s: %s", context, e, exc_info=True)
+    msg = str(e).lower()
+    if "auth" in msg or "401" in msg or "403" in msg:
+        return "Authentication failed"
+    if "timeout" in msg or "timed out" in msg:
+        return "Request timed out"
+    if "ssl" in msg or "certificate" in msg:
+        return "SSL/certificate error"
+    if "resolve" in msg or "name or service" in msg or "getaddrinfo" in msg:
+        return "Cannot resolve host"
+    if "connection" in msg:
+        return "Connection failed"
+    return "Request failed"
+
+
 class PhpIpamConfigCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=128)
     url: str = Field(..., min_length=1)
@@ -157,7 +173,7 @@ async def test_config(request: Request, config_id: int, db: AsyncSession = Depen
         result = await client.test_connection()
         return result
     except Exception as e:
-        return JSONResponse({"ok": False, "error": str(e)}, status_code=200)
+        return JSONResponse({"ok": False, "error": _safe_error(e, "phpipam")}, status_code=200)
 
 
 @router.get("/{config_id}/preview")
@@ -175,7 +191,7 @@ async def preview_sync(request: Request, config_id: int, db: AsyncSession = Depe
         hosts = await preview_hosts(cfg)
         return {"hosts": hosts, "count": len(hosts)}
     except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=400)
+        return JSONResponse({"error": _safe_error(e, "phpipam")}, status_code=400)
 
 
 @router.post("/{config_id}/sync")

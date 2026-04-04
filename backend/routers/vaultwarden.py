@@ -15,6 +15,23 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/vaultwarden/configs")
 
 
+def _safe_error(e: Exception, context: str) -> str:
+    """Return a sanitized error message, log full details server-side."""
+    logger.error("%s: %s", context, e, exc_info=True)
+    msg = str(e).lower()
+    if "auth" in msg or "password" in msg or "401" in msg or "403" in msg:
+        return "Authentication failed"
+    if "timeout" in msg or "timed out" in msg:
+        return "Request timed out"
+    if "ssl" in msg or "certificate" in msg:
+        return "SSL/certificate error"
+    if "resolve" in msg or "name or service" in msg or "getaddrinfo" in msg:
+        return "Cannot resolve host"
+    if "connection" in msg:
+        return "Connection failed"
+    return "Request failed"
+
+
 class VaultwardenConfigCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=128)
     url: str = Field(..., min_length=1)
@@ -138,7 +155,7 @@ async def test_config(request: Request, config_id: int, db: AsyncSession = Depen
         result = await client.test_connection()
         return result
     except Exception as e:
-        return JSONResponse({"ok": False, "error": str(e)}, status_code=200)
+        return JSONResponse({"ok": False, "error": _safe_error(e, "vaultwarden")}, status_code=200)
 
 
 @router.get("/{config_id}/preview")
@@ -157,7 +174,7 @@ async def preview_credentials(request: Request, config_id: int,
         creds = await _preview(cfg)
         return {"credentials": creds, "count": len(creds)}
     except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=400)
+        return JSONResponse({"error": _safe_error(e, "vaultwarden")}, status_code=400)
 
 
 @router.get("/{config_id}/auto-match")
@@ -175,7 +192,7 @@ async def auto_match(request: Request, config_id: int, db: AsyncSession = Depend
         matches = await auto_match_credentials(db, cfg, user.id)
         return {"matches": matches, "count": len(matches)}
     except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=400)
+        return JSONResponse({"error": _safe_error(e, "vaultwarden")}, status_code=400)
 
 
 @router.post("/{config_id}/assign")
@@ -194,7 +211,7 @@ async def assign_credential(request: Request, config_id: int, body: AssignReques
         result = await _assign(db, cfg, user.id, body.connection_id, body.credential_id)
         return result
     except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=400)
+        return JSONResponse({"error": _safe_error(e, "vaultwarden")}, status_code=400)
 
 
 @router.post("/{config_id}/bulk-assign")
@@ -213,4 +230,4 @@ async def bulk_assign_credentials(request: Request, config_id: int, body: BulkAs
         result = await bulk_assign(db, cfg, user.id, [a.model_dump() for a in body.assignments])
         return result
     except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=400)
+        return JSONResponse({"error": _safe_error(e, "vaultwarden")}, status_code=400)

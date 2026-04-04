@@ -130,15 +130,16 @@ async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends
     if not user.is_active:
         return JSONResponse({"error": "Account is disabled"}, status_code=403)
 
-    # MFA check
+    # MFA check (lockout counter is shared with login to prevent bypass)
     mfa_code = getattr(body, "mfa_code", None)
     if user.mfa_enabled and user.mfa_secret:
         if not mfa_code:
-            # Return a pre-auth token signalling MFA required (no session yet)
             return JSONResponse({"mfa_required": True}, status_code=200)
         from services.mfa import verify_code
         if not verify_code(user.mfa_secret, mfa_code):
+            # Use same lockout as password to prevent MFA brute force
             await _record_failed(db, body.username)
+            await db.commit()
             return JSONResponse({"error": "Invalid MFA code"}, status_code=401)
 
     await _clear_failed(db, body.username)
