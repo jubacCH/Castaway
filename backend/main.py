@@ -121,6 +121,7 @@ async def auth_middleware(request: Request, call_next):
         # - Multipart uploads with CSRF header present
         skip_csrf = (
             request.url.path.startswith("/api/auth/")
+            or request.url.path.startswith("/web/")  # proxied apps have their own CSRF
             or (is_api and "json" in content_type)
             or (is_api and request.headers.get("x-csrf-token"))
         )
@@ -168,20 +169,24 @@ async def auth_middleware(request: Request, call_next):
     # Set CSRF cookie
     set_csrf_cookie(request, response)
 
-    # Security headers
-    response.headers["X-Frame-Options"] = "DENY"
+    # Security headers — relaxed for /web/ proxy paths (proxied apps have own CSP)
+    is_proxy = request.url.path.startswith("/web/")
+    if not is_proxy:
+        response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    nonce = getattr(request.state, "csp_nonce", "")
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; "
-        f"script-src 'self' 'unsafe-inline' 'nonce-{nonce}' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; "
-        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
-        "img-src 'self' data: blob: https://lh3.googleusercontent.com; "
-        "connect-src 'self' ws: wss:; "
-        "font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com; "
-        "frame-ancestors 'none'"
-    )
+
+    if not is_proxy:
+        nonce = getattr(request.state, "csp_nonce", "")
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            f"script-src 'self' 'unsafe-inline' 'nonce-{nonce}' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+            "img-src 'self' data: blob: https://lh3.googleusercontent.com; "
+            "connect-src 'self' ws: wss:; "
+            "font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com; "
+            "frame-ancestors 'none'"
+        )
 
     if request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
@@ -197,6 +202,7 @@ from routers import sessions as sessions_router
 from routers import users as users_router
 from routers import rdp, import_export, api_keys
 from routers import mfa as mfa_router
+from routers import web_proxy
 from routers import settings as settings_router
 
 app.include_router(auth.router)
@@ -212,5 +218,6 @@ app.include_router(import_export.router)
 app.include_router(settings_router.router)
 app.include_router(api_keys.router)
 app.include_router(mfa_router.router)
+app.include_router(web_proxy.router)
 app.include_router(pages.router)
 app.include_router(ws_ssh.router)
