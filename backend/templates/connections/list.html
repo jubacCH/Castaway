@@ -52,10 +52,14 @@
              data-name="{{ item.conn.name|lower }}" data-host="{{ item.conn.host|lower }}" data-folder="{{ item.conn.folder_id or '' }}">
             {% if item.conn.web_url %}
             <!-- Screenshot thumbnail -->
-            <div class="relative w-full aspect-video bg-slate-800/50 overflow-hidden">
+            <div class="relative w-full aspect-video bg-slate-950/60 overflow-hidden">
                 <img src="/api/connections/{{ item.conn.id }}/screenshot.jpg" alt=""
-                     class="w-full h-full object-cover object-top"
-                     onerror="this.parentElement.innerHTML='<div class=\'flex items-center justify-center w-full h-full\'><span class=\'material-symbols-outlined text-3xl text-slate-700\'>language</span></div>'">
+                     class="screenshot-img w-full h-full object-cover object-top" data-id="{{ item.conn.id }}" loading="lazy">
+                <!-- Fallback (shown when image fails) -->
+                <div class="screenshot-fallback absolute inset-0 hidden flex-col items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-3xl text-slate-700">language</span>
+                    <span class="text-[10px] text-slate-600 font-mono">{{ item.conn.web_url }}</span>
+                </div>
                 <div class="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <a href="{{ item.conn.web_url }}" target="_blank" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1">
                         <span class="material-symbols-outlined text-[14px]">open_in_new</span> Open Web
@@ -185,6 +189,16 @@ async function deleteConnection(id, name) {
     await apiFetch(`/api/connections/${id}`, { method: 'DELETE' });
     location.reload();
 }
+// Handle screenshot load errors — show fallback
+document.querySelectorAll('.screenshot-img').forEach(img => {
+    img.addEventListener('error', () => {
+        img.classList.add('hidden');
+        const fallback = img.parentElement.querySelector('.screenshot-fallback');
+        if (fallback) fallback.classList.remove('hidden');
+        fallback.classList.add('flex');
+    });
+});
+
 document.getElementById('refreshStatusBtn')?.addEventListener('click', async (e) => {
     const btn = e.currentTarget;
     btn.disabled = true;
