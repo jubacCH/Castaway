@@ -151,10 +151,14 @@ async def update_connection(
     if not conn or (conn.user_id != user.id and user.role != "admin"):
         return JSONResponse({"error": "Not found"}, status_code=404)
 
-    for field in ("name", "host", "port", "protocol", "username", "auth_method", "folder_id", "notes", "jump_host_id"):
+    for field in ("name", "host", "port", "protocol", "auth_method", "folder_id", "notes", "jump_host_id"):
         val = getattr(body, field, None)
         if val is not None:
             setattr(conn, field, val)
+
+    # Username: allow clearing with empty string
+    if body.username is not None:
+        conn.username = body.username if body.username else None
 
     if body.password is not None:
         conn.encrypted_password = encrypt_value(body.password) if body.password else None
