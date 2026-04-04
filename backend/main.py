@@ -17,7 +17,17 @@ from models.user import Session, User, hash_token
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()
+    # Run Alembic migrations on startup (in a thread to avoid async conflicts)
+    import asyncio
+    from concurrent.futures import ThreadPoolExecutor
+    def _run_migrations():
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config("alembic.ini")
+        command.upgrade(alembic_cfg, "head")
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(ThreadPoolExecutor(1), _run_migrations)
+
     from services.scheduler import start_scheduler, stop_scheduler
     start_scheduler()
     yield
@@ -50,8 +60,28 @@ async def health():
 
 
 async def _get_current_user(request: Request):
-    """Resolve user from session cookie."""
+    """Resolve user from session cookie or API key."""
     from datetime import datetime
+    import hashlib
+
+    # Try API key first (X-API-Key header)
+    api_key = request.headers.get("X-API-Key")
+    if api_key:
+        from models.api_key import ApiKey
+        key_hash = hashlib.sha256(api_key.encode()).hexdigest()
+        async with AsyncSessionLocal() as db:
+            ak = (await db.execute(
+                select(ApiKey).where(ApiKey.key_hash == key_hash)
+            )).scalar_one_or_none()
+            if ak:
+                ak.last_used_at = datetime.utcnow()
+                await db.commit()
+                return (await db.execute(
+                    select(User).where(User.id == ak.user_id)
+                )).scalar_one_or_none()
+        return None
+
+    # Fall back to session cookie
     token = request.cookies.get("castaway_session")
     if not token:
         return None
@@ -165,7 +195,7 @@ from routers import phpipam as phpipam_router
 from routers import vaultwarden as vaultwarden_router
 from routers import sessions as sessions_router
 from routers import users as users_router
-from routers import rdp, import_export
+from routers import rdp, import_export, api_keys
 from routers import settings as settings_router
 
 app.include_router(auth.router)
@@ -179,5 +209,6 @@ app.include_router(users_router.router)
 app.include_router(rdp.router)
 app.include_router(import_export.router)
 app.include_router(settings_router.router)
+app.include_router(api_keys.router)
 app.include_router(pages.router)
 app.include_router(ws_ssh.router)

@@ -14,6 +14,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.base import get_db
+from models.setting import Setting
 from models.user import Session, User, hash_token
 from schemas.auth import LoginRequest, RegisterRequest
 
@@ -24,24 +25,43 @@ SESSION_DAYS = 7
 _LOCKOUT_ATTEMPTS = 5
 _LOCKOUT_WINDOW = 900  # 15 minutes
 
-# Simple in-memory lockout tracking (DB-backed in production would be better)
-_failed_attempts: dict[str, list[float]] = {}
+
+async def _get_failed_attempts(db: AsyncSession, username: str) -> list[float]:
+    """Get failed login timestamps from DB settings."""
+    row = await db.get(Setting, f"_lockout:{username}")
+    if not row:
+        return []
+    try:
+        return json.loads(row.value)
+    except Exception:
+        return []
 
 
-def _is_locked_out(username: str) -> bool:
+async def _record_failed(db: AsyncSession, username: str):
     now = time.time()
-    attempts = _failed_attempts.get(username, [])
+    attempts = await _get_failed_attempts(db, username)
+    attempts = [t for t in attempts if t > now - _LOCKOUT_WINDOW]
+    attempts.append(now)
+    row = await db.get(Setting, f"_lockout:{username}")
+    if row:
+        row.value = json.dumps(attempts)
+    else:
+        db.add(Setting(key=f"_lockout:{username}", value=json.dumps(attempts)))
+    await db.flush()
+
+
+async def _clear_failed(db: AsyncSession, username: str):
+    row = await db.get(Setting, f"_lockout:{username}")
+    if row:
+        row.value = "[]"
+        await db.flush()
+
+
+async def _is_locked_out(db: AsyncSession, username: str) -> bool:
+    now = time.time()
+    attempts = await _get_failed_attempts(db, username)
     recent = [t for t in attempts if t > now - _LOCKOUT_WINDOW]
-    _failed_attempts[username] = recent
     return len(recent) >= _LOCKOUT_ATTEMPTS
-
-
-def _record_failed(username: str):
-    _failed_attempts.setdefault(username, []).append(time.time())
-
-
-def _clear_failed(username: str):
-    _failed_attempts.pop(username, None)
 
 
 def _session_response(user: User, token: str, request: Request) -> JSONResponse:
@@ -93,7 +113,7 @@ async def register(request: Request, body: RegisterRequest, db: AsyncSession = D
 
 @router.post("/api/auth/login")
 async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends(get_db)):
-    if _is_locked_out(body.username):
+    if await _is_locked_out(db, body.username):
         return JSONResponse({"error": "Account temporarily locked. Try again later."}, status_code=429)
 
     result = await db.execute(select(User).where(User.username == body.username))
@@ -104,13 +124,13 @@ async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends
     pw_ok = bcrypt.checkpw(body.password.encode(), stored_hash)
 
     if not user or not pw_ok:
-        _record_failed(body.username)
+        await _record_failed(db, body.username)
         return JSONResponse({"error": "Invalid username or password"}, status_code=401)
 
     if not user.is_active:
         return JSONResponse({"error": "Account is disabled"}, status_code=403)
 
-    _clear_failed(body.username)
+    await _clear_failed(db, body.username)
     token = secrets.token_hex(32)
     db.add(Session(token=hash_token(token), user_id=user.id,
                    expires_at=datetime.utcnow() + timedelta(days=SESSION_DAYS)))
