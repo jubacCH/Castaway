@@ -175,10 +175,23 @@ async def proxy_request(conn_id: int, path: str, request: Request):
             v = _rewrite_set_cookie(v, conn_id)
         response_headers[k] = v
 
-    # Rewrite HTML/JS responses with absolute URLs?
-    # For now: just pass through. Most modern apps use relative URLs.
+    # Rewrite HTML/JS/CSS responses to inject /web/{conn_id} prefix for absolute paths
+    content = upstream.content
+    content_type = upstream.headers.get("content-type", "").lower()
+    if any(t in content_type for t in ("text/html", "text/css", "application/javascript", "text/javascript")):
+        prefix = f"/web/{conn_id}"
+        text = content.decode("utf-8", errors="replace")
+        # Rewrite absolute paths (src/href/url/action="/...") but not "//..." (protocol-rel)
+        # Match: ="/path or ='/path or url(/path) or url("/path)
+        text = re.sub(r'(src|href|action|poster|data-url)="(/(?!/)[^"]*)"', rf'\1="{prefix}\2"', text)
+        text = re.sub(r"(src|href|action|poster|data-url)='(/(?!/)[^']*)'", rf"\1='{prefix}\2'", text)
+        text = re.sub(r'url\(([\'"]?)(/(?!/)[^\'")]*)\1\)', rf'url(\1{prefix}\2\1)', text)
+        content = text.encode("utf-8")
+        # Update content-length
+        response_headers.pop("content-length", None)
+
     return Response(
-        content=upstream.content,
+        content=content,
         status_code=upstream.status_code,
         headers=response_headers,
     )
