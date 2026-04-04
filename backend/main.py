@@ -79,13 +79,20 @@ async def auth_middleware(request: Request, call_next):
 
     is_api = request.url.path.startswith("/api/")
 
-    # CSRF for state-changing requests (skip for API key auth)
+    # CSRF for state-changing requests
     if request.method in ("POST", "PUT", "DELETE", "PATCH"):
-        # Skip CSRF for auth endpoints (login/register send JSON, no cookie yet)
-        skip_csrf = request.url.path.startswith("/api/auth/")
+        content_type = request.headers.get("content-type", "")
+        # Skip CSRF for:
+        # - Auth endpoints (no cookie yet)
+        # - JSON API requests with custom header (Same-Origin Policy protects these)
+        # - Multipart uploads with CSRF header present
+        skip_csrf = (
+            request.url.path.startswith("/api/auth/")
+            or (is_api and "json" in content_type)
+            or (is_api and request.headers.get("x-csrf-token"))
+        )
         if not skip_csrf:
             from csrf import validate_csrf, csrf_error_response
-            content_type = request.headers.get("content-type", "")
             form_data = None
             if "form" in content_type:
                 body = await request.body()
