@@ -105,10 +105,9 @@
             window.location.href = '/login';
         }
         async function apiFetch(url, opts = {}) {
-            return fetch(url, {
-                ...opts,
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrf(), ...opts.headers },
-            });
+            const headers = { 'X-CSRF-Token': getCsrf(), ...opts.headers };
+            if (opts.body) headers['Content-Type'] = 'application/json';
+            return fetch(url, { ...opts, headers });
         }
     </script>
     {% block scripts %}{% endblock %}
