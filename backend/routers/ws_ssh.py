@@ -120,8 +120,8 @@ async def ws_ssh(websocket: WebSocket, conn_id: int):
         )
         await websocket.send_text(json.dumps({"type": "connected"}))
 
-        logger.info("SSH session opened: user=%s conn=%s host=%s log=%s",
-                     user.username, conn_id, conn.host, session_log_id)
+        logger.info("SSH session opened: user=%s conn=%s log=%s",
+                     user.username, conn_id, session_log_id)
 
         async def read_ssh():
             """Read from SSH stdout and send to WebSocket."""
