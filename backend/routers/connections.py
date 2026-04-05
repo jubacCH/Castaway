@@ -49,6 +49,7 @@ def _conn_to_dict(conn: SSHConnection, tags: list[dict] | None = None) -> dict:
         "notes": conn.notes,
         "jump_host_id": conn.jump_host_id,
         "web_url": conn.web_url,
+        "subdomain": conn.subdomain,
         "source": conn.source,
         "source_id": conn.source_id,
         "is_online": conn.is_online,
@@ -131,6 +132,7 @@ async def create_connection(
         notes=body.notes,
         jump_host_id=body.jump_host_id,
         web_url=body.web_url,
+        subdomain=body.subdomain,
     )
     if body.password:
         conn.encrypted_password = encrypt_value(body.password)
@@ -236,7 +238,7 @@ async def update_connection(
         if not folder or folder.user_id != conn.user_id:
             return JSONResponse({"error": "Invalid folder"}, status_code=400)
 
-    for field in ("name", "host", "port", "protocol", "auth_method", "folder_id", "notes", "jump_host_id", "web_url"):
+    for field in ("name", "host", "port", "protocol", "auth_method", "folder_id", "notes", "jump_host_id", "web_url", "subdomain"):
         val = getattr(body, field, None)
         if val is not None:
             setattr(conn, field, val)

@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import re
 from datetime import datetime
 
 import httpx
@@ -13,6 +14,17 @@ from models.connection import SSHConnection
 from models.phpipam_config import PhpIpamConfig
 
 logger = logging.getLogger(__name__)
+
+
+def _slugify(name: str) -> str:
+    """Convert connection name to a DNS-safe subdomain slug."""
+    s = name.lower().strip()
+    # Remove .b8n.ch etc. — keep only first segment
+    s = s.split(".")[0]
+    # Replace non-alphanumerics with hyphens
+    s = re.sub(r"[^a-z0-9-]+", "-", s)
+    s = re.sub(r"-+", "-", s).strip("-")
+    return s[:60] or None
 
 
 async def _probe_web_url(host: str, port: str) -> str | None:
@@ -233,11 +245,30 @@ async def sync_hosts(db: AsyncSession, config: PhpIpamConfig, user_id: int) -> d
                 if new_web_url != conn.web_url:
                     conn.web_url = new_web_url
                     changed = True
+                # Auto-set subdomain if missing
+                if not conn.subdomain:
+                    slug = _slugify(name)
+                    if slug:
+                        # Ensure uniqueness
+                        existing_slug = (await db.execute(
+                            select(SSHConnection).where(SSHConnection.subdomain == slug)
+                        )).scalar_one_or_none()
+                        if not existing_slug or existing_slug.id == conn.id:
+                            conn.subdomain = slug
+                            changed = True
                 if changed:
                     updated += 1
                 else:
                     skipped += 1
             else:
+                slug = _slugify(name)
+                if slug:
+                    # Check uniqueness; if taken, append source_id suffix
+                    existing_slug = (await db.execute(
+                        select(SSHConnection).where(SSHConnection.subdomain == slug)
+                    )).scalar_one_or_none()
+                    if existing_slug:
+                        slug = f"{slug}-{source_id}"
                 db.add(SSHConnection(
                     user_id=user_id,
                     name=name[:128],
@@ -248,6 +279,7 @@ async def sync_hosts(db: AsyncSession, config: PhpIpamConfig, user_id: int) -> d
                     source="phpipam",
                     source_id=source_id,
                     web_url=web_url,
+                    subdomain=slug,
                 ))
                 added += 1
         except Exception as exc:

@@ -194,6 +194,18 @@ async def auth_middleware(request: Request, call_next):
     return response
 
 
+@app.middleware("http")
+async def subdomain_proxy_middleware(request: Request, call_next):
+    """Check if request is for a proxied subdomain — handle before auth middleware."""
+    if request.url.path.startswith("/static/") or request.url.path == "/health":
+        return await call_next(request)
+    from services.subdomain_proxy import handle_subdomain_request
+    proxy_response = await handle_subdomain_request(request)
+    if proxy_response is not None:
+        return proxy_response
+    return await call_next(request)
+
+
 # ── Routers ──────────────────────────────────────────────────────────────────
 from routers import auth, connections, folders, tags, pages, ws_ssh
 from routers import phpipam as phpipam_router
@@ -221,3 +233,6 @@ app.include_router(mfa_router.router)
 app.include_router(web_proxy.router)
 app.include_router(pages.router)
 app.include_router(ws_ssh.router)
+# Subdomain WS catchall MUST be registered last
+from routers import subdomain_ws
+app.include_router(subdomain_ws.router)

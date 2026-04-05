@@ -80,12 +80,18 @@ async def connections_page(request: Request, db: AsyncSession = Depends(get_db))
             "last_session": last_session,
         })
 
+    # Load proxy_domain for subdomain links
+    from models.setting import Setting
+    pd_row = await db.get(Setting, "proxy_domain")
+    proxy_domain = pd_row.value if pd_row else ""
+
     return templates.TemplateResponse("connections/list.html", {
         "request": request,
         "connections": conn_list,
         "folders": folders,
         "tags": tags,
         "user": user,
+        "proxy_domain": proxy_domain,
     })
 
 

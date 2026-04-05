@@ -14,6 +14,8 @@ router = APIRouter(prefix="/api/settings")
 DEFAULTS = {
     "screenshot_interval_min": "120",
     "status_interval_min": "5",
+    "proxy_domain": "",  # e.g. apps.b8n.ch
+    "login_url": "",  # e.g. https://castaway.b8n.ch/login
 }
 
 
