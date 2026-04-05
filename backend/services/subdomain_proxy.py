@@ -175,8 +175,29 @@ async def handle_subdomain_request(request: Request) -> Response | None:
         # Don't rewrite Location: Castaway subdomain == target root, so paths stay the same
         response_headers[k] = v
 
+    # Rewrite body: replace target hostname with subdomain hostname
+    # (apps embed absolute URLs like "https://target.example.com/" in HTML/JS/JSON)
+    content = upstream.content
+    content_type = upstream.headers.get("content-type", "").lower()
+    if any(t in content_type for t in ("text/html", "text/css", "application/json", "javascript", "text/javascript")):
+        try:
+            text = content.decode("utf-8")
+            target_host_with_port = target_parsed.netloc  # e.g. auth.b8n.ch:9443
+            target_host = target_parsed.hostname  # e.g. auth.b8n.ch
+            subdomain_host = host.split(":")[0]  # e.g. auth.apps.b8n.ch
+            # Replace full URLs first (with scheme)
+            text = text.replace(f"https://{target_host_with_port}", f"https://{subdomain_host}")
+            text = text.replace(f"http://{target_host_with_port}", f"https://{subdomain_host}")
+            if target_host != target_host_with_port:
+                text = text.replace(f"https://{target_host}", f"https://{subdomain_host}")
+                text = text.replace(f"http://{target_host}", f"https://{subdomain_host}")
+            content = text.encode("utf-8")
+            response_headers.pop("content-length", None)
+        except UnicodeDecodeError:
+            pass  # binary content, leave alone
+
     return Response(
-        content=upstream.content,
+        content=content,
         status_code=upstream.status_code,
         headers=response_headers,
     )
