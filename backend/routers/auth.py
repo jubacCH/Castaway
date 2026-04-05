@@ -72,10 +72,13 @@ def _session_response(user: User, token: str, request: Request) -> JSONResponse:
     })
     force_secure = os.environ.get("SECURE_COOKIES", "").lower() in ("1", "true", "yes")
     is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+    cookie_domain = os.environ.get("COOKIE_DOMAIN", "").strip() or None
     response.set_cookie(
         "castaway_session", token,
-        max_age=SESSION_DAYS * 86400, httponly=True, samesite="strict",
+        max_age=SESSION_DAYS * 86400, httponly=True,
+        samesite="lax" if cookie_domain else "strict",  # lax needed for subdomain sharing
         secure=force_secure or is_https,
+        domain=cookie_domain,
     )
     return response
 
@@ -200,5 +203,6 @@ async def logout(request: Request, db: AsyncSession = Depends(get_db)):
             await db.delete(session)
             await db.commit()
     response = JSONResponse({"ok": True})
-    response.delete_cookie("castaway_session")
+    cookie_domain = os.environ.get("COOKIE_DOMAIN", "").strip() or None
+    response.delete_cookie("castaway_session", domain=cookie_domain)
     return response

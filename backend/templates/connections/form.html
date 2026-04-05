@@ -46,6 +46,12 @@
                     <input type="url" name="web_url" value="{{ connection.web_url if connection and connection.web_url else '' }}" placeholder="https://..."
                         class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all">
                 </div>
+                <div class="col-span-2">
+                    <label class="block text-xs text-slate-400 mb-1.5 font-label">Proxy Subdomain (optional)</label>
+                    <input type="text" name="subdomain" value="{{ connection.subdomain if connection and connection.subdomain else '' }}" placeholder="proxmox" pattern="[a-z0-9-]+"
+                        class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all">
+                    <p class="text-[10px] text-slate-600 mt-1 font-label">Will be accessible as <code>&lt;slug&gt;.{proxy_domain}</code></p>
+                </div>
                 <div>
                     <label class="block text-xs text-slate-400 mb-1.5 font-label">Folder</label>
                     <select name="folder_id" class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
@@ -148,6 +154,7 @@ document.getElementById('connForm').addEventListener('submit', async (e) => {
         folder_id: form.folder_id.value ? parseInt(form.folder_id.value) : null,
         notes: form.notes.value || null,
         web_url: form.web_url.value || null,
+        subdomain: form.subdomain.value || null,
         tag_ids: Array.from(tagCheckboxes).map(cb => parseInt(cb.value)),
     };
     const url = connId ? `/api/connections/${connId}` : '/api/connections';

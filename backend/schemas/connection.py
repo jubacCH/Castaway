@@ -15,6 +15,7 @@ class ConnectionCreate(BaseModel):
     notes: str | None = None
     jump_host_id: int | None = None
     web_url: str | None = None
+    subdomain: str | None = None
     tag_ids: list[int] = []
 
 
@@ -32,6 +33,7 @@ class ConnectionUpdate(BaseModel):
     notes: str | None = None
     jump_host_id: int | None = None
     web_url: str | None = None
+    subdomain: str | None = None
     tag_ids: list[int] | None = None
 
 
@@ -47,6 +49,7 @@ class ConnectionOut(BaseModel):
     notes: str | None
     jump_host_id: int | None
     web_url: str | None
+    subdomain: str | None
     source: str
     source_id: str | None
     created_at: str | None

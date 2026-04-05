@@ -25,6 +25,7 @@ class SSHConnection(Base):
     notes = Column(Text, nullable=True)
     jump_host_id = Column(Integer, ForeignKey("connections.id", ondelete="SET NULL"), nullable=True)
     web_url = Column(String(512), nullable=True)  # optional web interface URL
+    subdomain = Column(String(64), unique=True, nullable=True)  # for subdomain proxy
     is_online = Column(Boolean, default=None, nullable=True)  # last check result
     last_check_at = Column(DateTime, nullable=True)
     source = Column(String(32), default="manual")  # manual | phpipam | vaultwarden

@@ -68,6 +68,32 @@
         </div>
     </div>
 
+    <!-- Subdomain Proxy -->
+    <div class="bg-slate-900/40 border border-slate-800 rounded-xl p-6">
+        <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider font-label mb-1">Subdomain Proxy</h3>
+        <p class="text-xs text-slate-500 mb-5">Route external traffic to internal web UIs via per-connection subdomains</p>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs text-slate-400 mb-1.5 font-label">Proxy Domain</label>
+                <div class="flex items-center gap-3">
+                    <input id="proxyDomain" type="text" placeholder="apps.b8n.ch"
+                        class="flex-1 px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <button id="saveProxyBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-colors active:scale-95">Save</button>
+                </div>
+                <p class="text-[10px] text-slate-600 mt-1 font-label">Subdomains on this domain route to connections by slug</p>
+            </div>
+            <div>
+                <label class="block text-xs text-slate-400 mb-1.5 font-label">Login URL</label>
+                <div class="flex items-center gap-3">
+                    <input id="loginUrl" type="url" placeholder="https://castaway.b8n.ch/login"
+                        class="flex-1 px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <button id="saveLoginBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-colors active:scale-95">Save</button>
+                </div>
+                <p class="text-[10px] text-slate-600 mt-1 font-label">Where unauth subdomain visitors are redirected</p>
+            </div>
+        </div>
+    </div>
+
     <!-- API Keys -->
     <div class="bg-slate-900/40 border border-slate-800 rounded-xl p-6">
         <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider font-label mb-1">API Keys</h3>
@@ -127,8 +153,19 @@ async function loadSettings() {
     if (data.settings) {
         document.getElementById('screenshotInterval').value = data.settings.screenshot_interval_min || '120';
         document.getElementById('statusInterval').value = data.settings.status_interval_min || '5';
+        document.getElementById('proxyDomain').value = data.settings.proxy_domain || '';
+        document.getElementById('loginUrl').value = data.settings.login_url || '';
     }
 }
+
+document.getElementById('saveProxyBtn').addEventListener('click', async () => {
+    await apiFetch('/api/settings/proxy_domain', { method: 'PUT', body: JSON.stringify({ value: document.getElementById('proxyDomain').value }) });
+    showSaved('Proxy domain saved!');
+});
+document.getElementById('saveLoginBtn').addEventListener('click', async () => {
+    await apiFetch('/api/settings/login_url', { method: 'PUT', body: JSON.stringify({ value: document.getElementById('loginUrl').value }) });
+    showSaved('Login URL saved!');
+});
 
 function showSaved(text) {
     const el = document.getElementById('settingsError');
