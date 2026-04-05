@@ -323,9 +323,9 @@ async def assign_credential(
         raise ValueError("Connection not found")
 
     if cred["username"]:
-        conn.username = cred["username"]
+        conn.username = cred["username"].strip()
     if cred["password"]:
-        conn.encrypted_password = encrypt_value(cred["password"])
+        conn.encrypted_password = encrypt_value(cred["password"].strip())
         conn.auth_method = "password"
 
     await db.commit()
