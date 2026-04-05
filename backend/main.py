@@ -197,12 +197,16 @@ async def auth_middleware(request: Request, call_next):
 @app.middleware("http")
 async def subdomain_proxy_middleware(request: Request, call_next):
     """Check if request is for a proxied subdomain — handle before auth middleware."""
-    if request.url.path.startswith("/static/") or request.url.path == "/health":
+    if request.url.path == "/health":
         return await call_next(request)
-    from services.subdomain_proxy import handle_subdomain_request
-    proxy_response = await handle_subdomain_request(request)
-    if proxy_response is not None:
-        return proxy_response
+    try:
+        from services.subdomain_proxy import handle_subdomain_request
+        proxy_response = await handle_subdomain_request(request)
+        if proxy_response is not None:
+            return proxy_response
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error("Subdomain proxy error: %s", e, exc_info=True)
     return await call_next(request)
 
 
