@@ -4,79 +4,162 @@
 {% block head %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
 <style>
-    #terminal-container { height: calc(100vh - 4rem - 2.5rem); }
-    .xterm { height: 100%; }
+    .terminal-shadow { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); }
+    .glow-text { text-shadow: 0 0 8px rgba(76,214,255,0.4); }
 </style>
 {% endblock %}
 
 {% block topbar %}
 <div class="flex items-center gap-4 flex-1">
-    <a href="/connections" class="text-slate-500 hover:text-slate-300 transition-colors">
+    <a href="/connections" class="text-on-surface-variant hover:text-on-surface transition-colors">
         <span class="material-symbols-outlined">arrow_back</span>
     </a>
-    <div class="flex flex-col">
-        <span class="font-bold text-slate-100 font-headline leading-tight">{{ connection.name }}</span>
-        <span class="text-xs text-slate-500 font-mono">{{ connection.username or 'root' }}@{{ connection.host }}:{{ connection.port }}</span>
+    <div>
+        <span class="font-headline italic font-bold text-primary text-xl leading-tight block">{{ connection.name }}</span>
+        <span class="text-xs text-on-surface-variant font-mono">{{ connection.username or 'root' }}@{{ connection.host }}:{{ connection.port }}</span>
     </div>
 </div>
-<div class="flex items-center gap-4">
+<div class="flex items-center gap-3">
     <div class="flex items-center gap-2">
-        <div id="statusDot" class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse shadow-[0_0_8px_rgba(250,204,21,0.6)]"></div>
-        <span id="status" class="text-xs text-yellow-400 font-mono">Connecting...</span>
+        <div id="statusDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.6)]"></div>
+        <span id="status" class="text-xs text-amber-500 font-mono uppercase tracking-widest">Connecting...</span>
     </div>
     <div class="hidden md:flex items-center gap-2">
-        <button onclick="toggleTerminalInfo()" class="p-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded transition-colors" title="Connection info">
+        <button onclick="toggleTerminalInfo()" class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-full transition-colors" title="Connection info">
             <span class="material-symbols-outlined text-[18px]">info</span>
         </button>
-        <button onclick="disconnect()" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded transition-colors uppercase tracking-wider flex items-center gap-1.5">
+        <button onclick="disconnect()" class="flex items-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 text-xs font-mono uppercase tracking-widest px-3 py-1.5 transition-colors" style="border-radius:6px 2px 6px 2px;">
             <span class="material-symbols-outlined text-[15px]">power_settings_new</span>
             Disconnect
         </button>
     </div>
-    <!-- Mobile disconnect -->
-    <button onclick="disconnect()" class="md:hidden text-red-400">
+    <button onclick="disconnect()" class="md:hidden text-red-500">
         <span class="material-symbols-outlined">power_settings_new</span>
     </button>
 </div>
 {% endblock %}
 
+{% block main_class %}bg-slate-950{% endblock %}
+
 {% block content %}
-<!-- Mobile notice — hidden on md+ screens -->
+<!-- Mobile notice -->
 <div class="md:hidden flex flex-col items-center justify-center h-[calc(100vh-4rem)] gap-4 px-6 text-center">
-    <div class="p-4 bg-slate-900/60 rounded-xl border border-slate-800">
-        <span class="material-symbols-outlined text-slate-500 text-4xl">terminal</span>
+    <div class="p-4 rounded-xl bg-surface border border-outline-variant" style="border-top-right-radius:24px;border-bottom-left-radius:24px;">
+        <span class="material-symbols-outlined text-outline text-4xl">terminal</span>
     </div>
-    <h3 class="text-lg font-bold text-slate-300 font-headline">Terminal not available on mobile</h3>
-    <p class="text-sm text-slate-500 max-w-xs">SSH terminals require a keyboard and sufficient screen space. Please open Castaway on a desktop or laptop.</p>
-    <a href="/connections" class="mt-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-sm transition-colors">
-        Back to Connections
+    <h3 class="text-lg font-headline italic font-bold text-primary">Terminal not available on mobile</h3>
+    <p class="text-sm text-on-surface-variant max-w-xs font-body">SSH terminals require a keyboard and sufficient screen space. Please open Castaway on a desktop or laptop.</p>
+    <a href="/connections" class="mt-2 px-4 py-2 bg-surface-container border border-outline-variant text-on-surface-variant text-sm transition-colors font-mono uppercase tracking-widest" style="border-radius:8px 2px 8px 2px;">
+        Back to Fleet
     </a>
 </div>
-<!-- Terminal -->
-<div id="terminal-container" class="hidden md:block bg-black"></div>
-<!-- Keyboard shortcuts footer -->
-<footer class="hidden md:flex h-10 bg-slate-900 border-t border-slate-700/50 px-5 items-center justify-between flex-shrink-0">
-    <div class="flex items-center gap-6">
-        <div class="flex items-center gap-2">
-            <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-300">Ctrl+Shift+C</kbd>
-            <span class="text-[11px] text-slate-500">Copy</span>
-        </div>
-        <div class="flex items-center gap-2">
-            <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-300">Ctrl+Shift+V</kbd>
-            <span class="text-[11px] text-slate-500">Paste</span>
-        </div>
-        <div class="flex items-center gap-2">
-            <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-300">Ctrl+Shift+D</kbd>
-            <span class="text-[11px] text-slate-500">Disconnect</span>
+
+<!-- Bento grid terminal layout -->
+<div class="hidden md:grid grid-cols-12 gap-4 p-4 h-[calc(100vh-4rem)]">
+
+    <!-- Terminal window (col 8) -->
+    <div class="col-span-12 xl:col-span-8 flex flex-col">
+        <div class="bg-slate-950 rounded-[2rem] overflow-hidden terminal-shadow border border-white/5 flex flex-col flex-1">
+            <!-- Window controls bar -->
+            <div class="h-12 bg-white/5 border-b border-white/5 flex items-center px-6 justify-between flex-shrink-0">
+                <div class="flex gap-2">
+                    <div class="w-3 h-3 rounded-full bg-red-500/80 cursor-pointer hover:bg-red-500 transition-colors" onclick="disconnect()"></div>
+                    <div class="w-3 h-3 rounded-full bg-amber-500/80"></div>
+                    <div class="w-3 h-3 rounded-full bg-emerald-500/80"></div>
+                </div>
+                <div class="flex items-center gap-2 text-[10px] uppercase tracking-widest text-white/30 font-mono">
+                    <span class="material-symbols-outlined text-xs">lock</span>
+                    {{ connection.username or 'root' }}@{{ connection.host }}:{{ connection.port }}
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="latencyDisplay" class="text-[10px] font-mono text-white/20 uppercase">—ms</span>
+                    <span class="text-[10px] font-mono text-white/20 uppercase">UTF-8</span>
+                </div>
+            </div>
+            <!-- xterm terminal -->
+            <div id="terminal-container" class="flex-1 bg-black"></div>
+            <!-- Shortcuts bar -->
+            <div class="h-9 bg-white/3 border-t border-white/5 px-6 flex items-center gap-6 flex-shrink-0">
+                <div class="flex items-center gap-2">
+                    <kbd class="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-mono text-white/40">Ctrl+Shift+C</kbd>
+                    <span class="text-[10px] text-white/20 font-mono uppercase">Copy</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <kbd class="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-mono text-white/40">Ctrl+Shift+V</kbd>
+                    <span class="text-[10px] text-white/20 font-mono uppercase">Paste</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <kbd class="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-mono text-white/40">Ctrl+Shift+D</kbd>
+                    <span class="text-[10px] text-white/20 font-mono uppercase">Disconnect</span>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="flex items-center gap-4">
-        <div class="h-3 w-[1px] bg-slate-700"></div>
-        <span class="text-[10px] font-mono text-slate-600 uppercase tracking-wider">UTF-8</span>
-        <div class="h-3 w-[1px] bg-slate-700"></div>
-        <span id="latencyDisplay" class="text-[10px] font-mono text-slate-600 uppercase tracking-wider">—ms</span>
+
+    <!-- Stats Sidebar (col 4) -->
+    <div class="col-span-12 xl:col-span-4 flex flex-col gap-4">
+        <!-- Connection info card -->
+        <div class="bg-surface-container-lowest border border-outline-variant/20 rounded-[2rem] p-6 shadow-xl" style="background:rgba(255,255,255,0.9);backdrop-filter:blur(40px);">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="font-headline italic font-bold text-xl text-primary">Connection</h3>
+                <span id="healthDot" class="flex h-2 w-2 rounded-full bg-amber-400 ring-4 ring-amber-400/20"></span>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="font-mono text-[10px] uppercase text-on-surface-variant tracking-widest">Host</span>
+                    <span class="font-mono text-xs text-primary font-bold">{{ connection.host }}</span>
+                </div>
+                <div class="h-px bg-surface-variant"></div>
+                <div class="flex justify-between items-center">
+                    <span class="font-mono text-[10px] uppercase text-on-surface-variant tracking-widest">Port</span>
+                    <span class="font-mono text-xs text-primary">{{ connection.port }}</span>
+                </div>
+                <div class="h-px bg-surface-variant"></div>
+                <div class="flex justify-between items-center">
+                    <span class="font-mono text-[10px] uppercase text-on-surface-variant tracking-widest">User</span>
+                    <span class="font-mono text-xs text-primary">{{ connection.username or 'root' }}</span>
+                </div>
+                <div class="h-px bg-surface-variant"></div>
+                <div class="flex justify-between items-center">
+                    <span class="font-mono text-[10px] uppercase text-on-surface-variant tracking-widest">Protocol</span>
+                    <span class="font-mono text-xs text-primary uppercase">{{ connection.protocol }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Session stats -->
+        <div class="bg-primary text-on-primary rounded-[2rem] p-6 relative overflow-hidden shadow-2xl" style="box-shadow:0 20px 40px rgba(7,1,0,0.2);">
+            <div class="absolute -right-6 -bottom-6 opacity-10">
+                <span class="material-symbols-outlined" style="font-size:100px;">terminal</span>
+            </div>
+            <h3 class="font-headline italic font-bold text-xl mb-2">Active Session</h3>
+            <p class="text-on-primary/60 text-xs font-mono uppercase tracking-widest mb-4">SSH Tunnel Established</p>
+            <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="font-mono text-[10px] uppercase text-on-primary/50">Duration</span>
+                    <span id="sessionTimer" class="font-mono text-xs text-on-primary font-bold">00:00:00</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="font-mono text-[10px] uppercase text-on-primary/50">Latency</span>
+                    <span id="latencyBadge" class="font-mono text-xs text-secondary-container">—ms</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick notes / shortcuts card -->
+        <div class="bg-surface-container-low rounded-[2rem] p-6 border border-outline-variant/15 flex-1">
+            <h3 class="font-headline italic font-bold text-lg text-primary mb-4">Quick Commands</h3>
+            <div class="space-y-3">
+                {% for cmd in [('htop', 'System monitor'), ('df -h', 'Disk usage'), ('free -h', 'Memory'), ('w', 'Who is logged in')] %}
+                <button class="quick-cmd w-full flex items-center justify-between p-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors text-left group" data-cmd="{{ cmd[0] }}">
+                    <span class="font-mono text-xs text-secondary">{{ cmd[0] }}</span>
+                    <span class="text-[10px] text-on-surface-variant font-mono uppercase tracking-widest group-hover:text-on-surface transition-colors">{{ cmd[1] }}</span>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
     </div>
-</footer>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -84,15 +167,15 @@
 <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js" nonce="{{ request.state.csp_nonce }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.min.js" nonce="{{ request.state.csp_nonce }}"></script>
 <script nonce="{{ request.state.csp_nonce }}">
-// Skip terminal init on mobile (container is hidden)
 if (window.innerWidth < 768) { /* mobile — do nothing */ } else {
 const connId = {{ connection.id }};
 let ws;
+let sessionStart = Date.now();
 
 const term = new Terminal({
     cursorBlink: true, fontSize: 14,
-    fontFamily: '"Geist Mono", "Cascadia Code", "Fira Code", monospace',
-    theme: { background: '#000000', foreground: '#e2e8f0', cursor: '#3b82f6', selectionBackground: '#334155' },
+    fontFamily: '"JetBrains Mono", "Cascadia Code", monospace',
+    theme: { background: '#000000', foreground: '#e2e8f0', cursor: '#006971', selectionBackground: '#334155' },
 });
 const fitAddon = new FitAddon.FitAddon();
 term.loadAddon(fitAddon);
@@ -103,10 +186,15 @@ fitAddon.fit();
 const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
 ws = new WebSocket(`${proto}//${location.host}/ws/ssh/${connId}`);
 
+function setStatus(text, color, dotClass) {
+    document.getElementById('status').textContent = text;
+    document.getElementById('status').className = `text-xs font-mono uppercase tracking-widest ${color}`;
+    document.getElementById('statusDot').className = `w-2 h-2 rounded-full ${dotClass}`;
+    document.getElementById('healthDot').className = `flex h-2 w-2 rounded-full ${dotClass.replace('animate-pulse', '')} ring-4 ${dotClass.includes('green') ? 'ring-green-500/20' : dotClass.includes('red') ? 'ring-red-400/20' : 'ring-amber-400/20'}`;
+}
+
 ws.onopen = () => {
-    document.getElementById('status').textContent = 'Connected';
-    document.getElementById('status').className = 'text-xs text-green-400 font-mono';
-    document.getElementById('statusDot').className = 'w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]';
+    setStatus('Connected', 'text-secondary', 'bg-secondary animate-pulse shadow-[0_0_8px_rgba(0,105,113,0.6)]');
     ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
 };
 ws.onmessage = (e) => {
@@ -119,20 +207,26 @@ ws.onmessage = (e) => {
 };
 ws.onclose = () => {
     term.write('\r\n\x1b[33mConnection closed.\x1b[0m\r\n');
-    document.getElementById('status').textContent = 'Disconnected';
-    document.getElementById('status').className = 'text-xs text-slate-500 font-mono';
-    document.getElementById('statusDot').className = 'w-2 h-2 rounded-full bg-slate-600';
+    setStatus('Disconnected', 'text-slate-500', 'bg-slate-600');
 };
 ws.onerror = () => {
-    document.getElementById('status').textContent = 'Error';
-    document.getElementById('status').className = 'text-xs text-red-400 font-mono';
-    document.getElementById('statusDot').className = 'w-2 h-2 rounded-full bg-red-400 shadow-[0_0_8px_rgba(239,68,68,0.6)]';
+    setStatus('Error', 'text-red-400', 'bg-red-400 shadow-[0_0_8px_rgba(239,68,68,0.6)]');
 };
 term.onData((data) => { if (ws.readyState === WebSocket.OPEN) ws.send(data); });
 window.addEventListener('resize', () => {
     fitAddon.fit();
     if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
 });
+
+// Session timer
+setInterval(() => {
+    const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+    const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+    const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+    const s = String(elapsed % 60).padStart(2, '0');
+    const el = document.getElementById('sessionTimer');
+    if (el) el.textContent = `${h}:${m}:${s}`;
+}, 1000);
 
 function disconnect() { ws.close(); window.location.href = '/connections'; }
 
@@ -141,19 +235,29 @@ function toggleTerminalInfo() {
     if (panel) { panel.remove(); return; }
     panel = document.createElement('div');
     panel.id = 'termInfoPanel';
-    panel.className = 'absolute top-14 right-4 z-50 bg-slate-900 border border-slate-700 rounded-lg p-4 shadow-2xl min-w-[220px]';
+    panel.className = 'absolute top-14 right-4 z-50 shadow-2xl min-w-[220px]';
+    panel.style.cssText = 'background:#fbf9f4;border:1px solid #c5c6d0;border-top-right-radius:20px;border-bottom-left-radius:20px;padding:1rem;';
     panel.innerHTML = `
-        <p class="text-[10px] text-slate-500 uppercase font-mono tracking-widest mb-3">Connection Info</p>
-        <div class="space-y-2 text-xs font-mono">
-            <div class="flex justify-between gap-4"><span class="text-slate-500">Host</span><span class="text-slate-300">{{ connection.host }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">Port</span><span class="text-slate-300">{{ connection.port }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">User</span><span class="text-slate-300">{{ connection.username or 'root' }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">Protocol</span><span class="text-slate-300 uppercase">{{ connection.protocol }}</span></div>
+        <p style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#75777f;text-transform:uppercase;letter-spacing:0.2em;margin-bottom:12px;">Connection Info</p>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:11px;font-family:'JetBrains Mono',monospace;">
+            <div style="display:flex;justify-content:space-between;gap:16px;"><span style="color:#75777f;">Host</span><span style="color:#1b1c19;">{{ connection.host }}</span></div>
+            <div style="display:flex;justify-content:space-between;gap:16px;"><span style="color:#75777f;">Port</span><span style="color:#1b1c19;">{{ connection.port }}</span></div>
+            <div style="display:flex;justify-content:space-between;gap:16px;"><span style="color:#75777f;">User</span><span style="color:#1b1c19;">{{ connection.username or 'root' }}</span></div>
+            <div style="display:flex;justify-content:space-between;gap:16px;"><span style="color:#75777f;">Protocol</span><span style="color:#1b1c19;text-transform:uppercase;">{{ connection.protocol }}</span></div>
         </div>`;
     document.querySelector('header').style.position = 'relative';
     document.querySelector('header').appendChild(panel);
     setTimeout(() => document.addEventListener('click', function h(e) { if (!panel.contains(e.target)) { panel.remove(); document.removeEventListener('click', h); } }), 0);
 }
+
+// Quick commands
+document.querySelectorAll('.quick-cmd').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const cmd = btn.dataset.cmd + '\n';
+        if (ws.readyState === WebSocket.OPEN) ws.send(cmd);
+        term.focus();
+    });
+});
 
 document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.shiftKey && e.key === 'C') { const sel = term.getSelection(); if (sel) { navigator.clipboard.writeText(sel); e.preventDefault(); } }

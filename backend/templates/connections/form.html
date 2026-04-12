@@ -3,167 +3,214 @@
 
 {% block topbar %}
 <div class="flex items-center gap-4 flex-1">
-    <a href="/connections" class="text-slate-500 hover:text-slate-300 transition-colors">
+    <a href="/connections" class="text-on-surface-variant hover:text-on-surface transition-colors">
         <span class="material-symbols-outlined">arrow_back</span>
     </a>
-    <span class="font-bold text-slate-100 font-headline">{{ 'Edit' if connection else 'New' }} Connection</span>
+    <span class="font-headline italic text-xl font-bold text-primary">{{ 'Edit' if connection else 'New' }} Connection</span>
 </div>
 {% endblock %}
 
+{% block main_class %}bg-slate-950{% endblock %}
+
 {% block content %}
-<div class="p-6 xl:p-8">
-    <div id="error" class="hidden mb-5 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-mono text-xs"></div>
+<div class="pb-24">
+    <div class="max-w-6xl mx-auto px-6 xl:px-8 pt-8">
 
-    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        <!-- Form (left, 8 cols) -->
-        <form id="connForm" class="xl:col-span-8 space-y-5">
-            <!-- Basic Info -->
-            <div class="bg-slate-900/40 border border-slate-800 rounded-lg p-5">
-                <div class="flex items-center gap-2 mb-4">
-                    <span class="material-symbols-outlined text-blue-400 text-[18px]">dns</span>
-                    <h3 class="text-xs font-bold text-slate-300 uppercase tracking-widest font-mono">Connection</h3>
-                    <div class="flex-1 h-[1px] bg-slate-800 ml-2"></div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="col-span-2">
-                        <label class="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1.5">Name</label>
-                        <input type="text" name="name" required value="{{ connection.name if connection else '' }}"
-                            class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all font-mono">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1.5">Host</label>
-                        <input type="text" name="host" required value="{{ connection.host if connection else '' }}"
-                            class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all font-mono">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1.5">Port</label>
-                        <input type="number" name="port" value="{{ connection.port if connection else 22 }}" min="1" max="65535"
-                            class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all font-mono">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1.5">Protocol</label>
-                        <select name="protocol" class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono">
-                            <option value="ssh" {{ 'selected' if not connection or connection.protocol == 'ssh' }}>SSH</option>
-                            <option value="rdp" {{ 'selected' if connection and connection.protocol == 'rdp' }}>RDP</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1.5">Folder</label>
-                        <select name="folder_id" class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono">
-                            <option value="">None</option>
-                            {% for f in folders %}
-                            <option value="{{ f.id }}" {{ 'selected' if connection and connection.folder_id == f.id }}>{{ f.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1.5">Web URL <span class="text-slate-600 normal-case tracking-normal">(optional)</span></label>
-                        <input type="url" name="web_url" value="{{ connection.web_url if connection and connection.web_url else '' }}" placeholder="https://..."
-                            class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all font-mono">
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1.5">Proxy Subdomain <span class="text-slate-600 normal-case tracking-normal">(optional)</span></label>
-                        <input type="text" name="subdomain" value="{{ connection.subdomain if connection and connection.subdomain else '' }}" placeholder="proxmox" pattern="[a-z0-9-]+"
-                            class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all font-mono">
-                        <p class="text-[10px] text-slate-600 mt-1 font-mono">Accessible as <code class="text-slate-500">&lt;slug&gt;.{{ proxy_domain }}</code></p>
-                    </div>
-                </div>
-            </div>
+        <!-- Breadcrumb -->
+        <nav class="flex items-center gap-2 text-slate-400 text-xs font-mono mb-6 uppercase tracking-tighter">
+            <a href="/connections" class="hover:text-blue-400">Fleet</a>
+            <span class="material-symbols-outlined text-[10px]">chevron_right</span>
+            <span class="text-slate-100">{{ 'Edit' if connection else 'New Connection' }}</span>
+        </nav>
 
-            <!-- Auth -->
-            <div class="bg-slate-900/40 border border-slate-800 rounded-lg p-5">
-                <div class="flex items-center gap-2 mb-4">
-                    <span class="material-symbols-outlined text-blue-400 text-[18px]">lock</span>
-                    <h3 class="text-xs font-bold text-slate-300 uppercase tracking-widest font-mono">Authentication</h3>
-                    <div class="flex-1 h-[1px] bg-slate-800 ml-2"></div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1.5">Method</label>
-                        <select name="auth_method" class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono">
-                            <option value="password" {{ 'selected' if not connection or connection.auth_method == 'password' }}>Password</option>
-                            <option value="key" {{ 'selected' if connection and connection.auth_method == 'key' }}>SSH Key</option>
-                            <option value="agent" {{ 'selected' if connection and connection.auth_method == 'agent' }}>SSH Agent</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1.5">Username</label>
-                        <input type="text" name="username" value="{{ connection.username if connection and connection.username else '' }}"
-                            class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all font-mono">
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1.5">Password</label>
-                        <input type="password" name="password" placeholder="{{ '(unchanged)' if connection and connection.encrypted_password else '' }}"
-                            class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all font-mono">
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1.5">Private Key</label>
-                        <textarea name="private_key" rows="4" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"
-                            class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded text-white font-mono text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all resize-none"></textarea>
-                    </div>
-                </div>
-            </div>
+        <!-- Error banner -->
+        <div id="error" class="hidden mb-5 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-mono text-xs"></div>
 
-            <!-- Tags & Notes -->
-            <div class="bg-slate-900/40 border border-slate-800 rounded-lg p-5">
-                <div class="flex items-center gap-2 mb-4">
-                    <span class="material-symbols-outlined text-blue-400 text-[18px]">label</span>
-                    <h3 class="text-xs font-bold text-slate-300 uppercase tracking-widest font-mono">Details</h3>
-                    <div class="flex-1 h-[1px] bg-slate-800 ml-2"></div>
-                </div>
-                {% if tags %}
-                <div class="mb-4">
-                    <label class="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-2">Tags</label>
-                    <div class="flex flex-wrap gap-2">
-                        {% for tag in tags %}
-                        <label class="inline-flex items-center gap-1.5 cursor-pointer px-2 py-1 bg-slate-800/50 rounded border border-slate-700 hover:border-slate-600 transition-colors">
-                            <input type="checkbox" name="tag_ids" value="{{ tag.id }}"
-                                {{ 'checked' if selected_tag_ids is defined and tag.id in selected_tag_ids }}
-                                class="rounded bg-slate-700 border-slate-600 text-blue-500 focus:ring-blue-500">
-                            <span class="text-xs text-slate-300 font-mono">{{ tag.name }}</span>
-                        </label>
-                        {% endfor %}
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <!-- Form (left, 8 cols) -->
+            <form id="connForm" class="lg:col-span-8 space-y-5">
+
+                <!-- Basic Info -->
+                <div class="bg-slate-900/40 border border-slate-800 p-6 rounded-xl">
+                    <div class="flex items-center gap-2 mb-5">
+                        <span class="material-symbols-outlined text-blue-500 text-sm">info</span>
+                        <h3 class="text-xs font-mono uppercase tracking-widest text-slate-400">Basic Information</h3>
+                        <div class="flex-grow h-px bg-slate-800 ml-3"></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="md:col-span-2 space-y-1.5">
+                            <label class="block text-xs font-mono uppercase tracking-widest text-slate-400">Connection Name</label>
+                            <input type="text" name="name" required value="{{ connection.name if connection else '' }}" placeholder="Production-Web-01"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono transition-all">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-mono uppercase tracking-widest text-slate-400">Host / IP Address</label>
+                            <input type="text" name="host" required value="{{ connection.host if connection else '' }}" placeholder="192.168.1.100"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono transition-all">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-mono uppercase tracking-widest text-slate-400">Port</label>
+                            <input type="number" name="port" value="{{ connection.port if connection else 22 }}" min="1" max="65535"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono transition-all">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-mono uppercase tracking-widest text-slate-400">Protocol</label>
+                            <select name="protocol" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:ring-1 focus:ring-blue-500 outline-none font-mono">
+                                <option value="ssh" {{ 'selected' if not connection or connection.protocol == 'ssh' }}>SSH</option>
+                                <option value="rdp" {{ 'selected' if connection and connection.protocol == 'rdp' }}>RDP</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-mono uppercase tracking-widest text-slate-400">Username</label>
+                            <input type="text" name="username" value="{{ connection.username if connection and connection.username else '' }}" placeholder="root"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono transition-all">
+                        </div>
                     </div>
                 </div>
-                {% endif %}
-                <div>
-                    <label class="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1.5">Notes</label>
-                    <textarea name="notes" rows="2"
-                        class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all font-mono">{{ connection.notes if connection and connection.notes else '' }}</textarea>
-                </div>
-            </div>
 
-            <!-- Action buttons -->
-            <div class="flex gap-3 pt-1">
-                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 rounded font-bold text-sm uppercase tracking-wider transition-colors active:scale-[0.98] flex items-center gap-2">
-                    <span class="material-symbols-outlined text-[17px]">save</span>
-                    {{ 'Save Changes' if connection else 'Create Connection' }}
-                </button>
-                <a href="/connections" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-sm font-mono transition-colors">Cancel</a>
+                <!-- Authentication -->
+                <div class="bg-slate-900/40 border border-slate-800 p-6 rounded-xl">
+                    <div class="flex items-center gap-2 mb-5">
+                        <span class="material-symbols-outlined text-blue-500 text-sm">security</span>
+                        <h3 class="text-xs font-mono uppercase tracking-widest text-slate-400">Authentication</h3>
+                        <div class="flex-grow h-px bg-slate-800 ml-3"></div>
+                    </div>
+                    <div class="space-y-5">
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-mono uppercase tracking-widest text-slate-400">Auth Method</label>
+                            <select name="auth_method" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:ring-1 focus:ring-blue-500 outline-none font-mono">
+                                <option value="password" {{ 'selected' if not connection or connection.auth_method == 'password' }}>Password</option>
+                                <option value="key" {{ 'selected' if connection and connection.auth_method == 'key' }}>SSH Key</option>
+                                <option value="agent" {{ 'selected' if connection and connection.auth_method == 'agent' }}>SSH Agent</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-mono uppercase tracking-widest text-slate-400">Password</label>
+                            <input type="password" name="password" placeholder="{{ '(unchanged)' if connection and connection.encrypted_password else '••••••••' }}"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono transition-all">
+                        </div>
+                        <div class="space-y-1.5">
+                            <div class="flex items-center justify-between">
+                                <label class="block text-xs font-mono uppercase tracking-widest text-slate-400">Private Key</label>
+                                <span class="text-[10px] text-slate-500 font-mono">PEM / OpenSSH format</span>
+                            </div>
+                            <textarea name="private_key" rows="4" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-xs text-slate-100 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono resize-none transition-all">{{ connection.private_key if connection and connection.private_key else '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advanced Networking -->
+                <div class="bg-slate-900/40 border border-slate-800 p-6 rounded-xl">
+                    <div class="flex items-center gap-2 mb-5">
+                        <span class="material-symbols-outlined text-blue-500 text-sm">settings_input_component</span>
+                        <h3 class="text-xs font-mono uppercase tracking-widest text-slate-400">Advanced Networking</h3>
+                        <div class="flex-grow h-px bg-slate-800 ml-3"></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="md:col-span-2 space-y-1.5">
+                            <label class="block text-xs font-mono uppercase tracking-widest text-slate-400">Web URL <span class="text-slate-600 normal-case tracking-normal">(optional)</span></label>
+                            <input type="url" name="web_url" value="{{ connection.web_url if connection and connection.web_url else '' }}" placeholder="https://..."
+                                class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono transition-all">
+                        </div>
+                        <div class="md:col-span-2 space-y-1.5">
+                            <label class="block text-xs font-mono uppercase tracking-widest text-slate-400">Proxy Subdomain <span class="text-slate-600 normal-case tracking-normal">(optional)</span></label>
+                            <div class="flex items-center">
+                                <input type="text" name="subdomain" value="{{ connection.subdomain if connection and connection.subdomain else '' }}" placeholder="my-app" pattern="[a-z0-9-]+"
+                                    class="flex-grow bg-slate-950 border border-slate-800 rounded-l-lg px-4 py-2.5 text-sm text-slate-100 focus:ring-1 focus:ring-blue-500 outline-none font-mono transition-all">
+                                <span class="bg-slate-800 border-y border-r border-slate-700 px-3 py-2.5 text-[10px] text-slate-400 font-mono rounded-r-lg">.{{ proxy_domain }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Organization -->
+                <div class="bg-slate-900/40 border border-slate-800 p-6 rounded-xl">
+                    <div class="flex items-center gap-2 mb-5">
+                        <span class="material-symbols-outlined text-blue-500 text-sm">folder_open</span>
+                        <h3 class="text-xs font-mono uppercase tracking-widest text-slate-400">Organization</h3>
+                        <div class="flex-grow h-px bg-slate-800 ml-3"></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-mono uppercase tracking-widest text-slate-400">Folder</label>
+                            <select name="folder_id" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:ring-1 focus:ring-blue-500 outline-none font-mono">
+                                <option value="">None</option>
+                                {% for f in folders %}
+                                <option value="{{ f.id }}" {{ 'selected' if connection and connection.folder_id == f.id }}>{{ f.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% if tags %}
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-mono uppercase tracking-widest text-slate-400">Tags</label>
+                            <div class="flex flex-wrap gap-2 p-2 bg-slate-950 border border-slate-800 rounded-lg min-h-[44px]">
+                                {% for tag in tags %}
+                                <label class="inline-flex items-center gap-1.5 cursor-pointer px-2 py-1 bg-slate-800/50 rounded border border-slate-700 hover:border-slate-600 transition-colors">
+                                    <input type="checkbox" name="tag_ids" value="{{ tag.id }}"
+                                        {{ 'checked' if selected_tag_ids is defined and tag.id in selected_tag_ids }}
+                                        class="rounded bg-slate-700 border-slate-600 text-blue-500">
+                                    <span class="text-xs text-slate-300 font-mono">{{ tag.name }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="md:col-span-2 space-y-1.5">
+                            <label class="block text-xs font-mono uppercase tracking-widest text-slate-400">Notes</label>
+                            <textarea name="notes" rows="2"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:ring-1 focus:ring-blue-500 outline-none font-mono transition-all resize-none">{{ connection.notes if connection and connection.notes else '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
                 {% if connection and connection.encrypted_password %}
-                <button type="button" id="clearCredsBtn" class="ml-auto px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded text-sm font-mono transition-colors flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-[16px]">delete_sweep</span>
-                    Clear Credentials
-                </button>
+                <div class="flex justify-end">
+                    <button type="button" id="clearCredsBtn" class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg text-xs font-mono transition-colors flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[15px]">delete_sweep</span>
+                        Clear Credentials
+                    </button>
+                </div>
                 {% endif %}
-            </div>
-        </form>
+            </form>
 
-        <!-- Tips sidebar (right, 4 cols) -->
-        <div class="xl:col-span-4 space-y-4">
-            <!-- Connection preview -->
-            <div class="bg-slate-900/40 border border-slate-800 rounded-lg p-4">
-                <p class="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-3">Connection String</p>
-                <code id="connPreview" class="block text-xs font-mono text-blue-400 break-all">—</code>
-            </div>
-            <!-- Tips -->
-            <div class="bg-slate-900/40 border border-slate-800 rounded-lg p-4 space-y-3">
-                <p class="text-[10px] font-mono uppercase tracking-widest text-slate-500">Tips</p>
-                <div class="space-y-2.5 text-xs text-slate-400 font-mono">
-                    <p class="flex gap-2"><span class="text-blue-400 flex-shrink-0">→</span> Use an SSH key for passwordless auth</p>
-                    <p class="flex gap-2"><span class="text-blue-400 flex-shrink-0">→</span> Set a Web URL to enable screenshot previews</p>
-                    <p class="flex gap-2"><span class="text-blue-400 flex-shrink-0">→</span> Set a Proxy Subdomain to create a reverse proxy</p>
-                    <p class="flex gap-2"><span class="text-blue-400 flex-shrink-0">→</span> Tags help organise connections by environment</p>
+            <!-- Tips Sidebar (right, 4 cols) -->
+            <div class="lg:col-span-4 space-y-5">
+                <!-- Connection string preview -->
+                <div class="bg-slate-900/40 border border-slate-800 p-5 rounded-xl">
+                    <label class="block text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-2">String Preview</label>
+                    <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg font-mono text-[11px] text-blue-400 overflow-x-auto whitespace-nowrap">
+                        <span class="text-slate-500">$</span> <span id="connPreview">ssh root@host -p 22</span>
+                    </div>
+                </div>
+                <!-- Tips -->
+                <div class="bg-slate-800/30 border border-slate-800 p-5 rounded-xl">
+                    <h4 class="text-slate-100 font-bold mb-4 flex items-center gap-2 text-sm">
+                        <span class="material-symbols-outlined text-blue-400 text-[18px]">lightbulb</span>
+                        Connection Tips
+                    </h4>
+                    <ul class="space-y-4 text-xs text-slate-400 leading-relaxed font-mono">
+                        <li class="flex gap-3">
+                            <span class="text-blue-500 font-bold shrink-0">01</span>
+                            <p>Use <strong class="text-slate-200">SSH Keys</strong> for superior security and automated access without password prompts.</p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="text-blue-500 font-bold shrink-0">02</span>
+                            <p>Set a <strong class="text-slate-200">Web URL</strong> to enable screenshot previews for web interfaces.</p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="text-blue-500 font-bold shrink-0">03</span>
+                            <p>A <strong class="text-slate-200">Proxy Subdomain</strong> lets you access internal web UIs via a public URL.</p>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Security note -->
+                <div class="bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20 p-5 rounded-xl">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="material-symbols-outlined text-blue-400 text-[18px]" style="font-variation-settings:'FILL' 1;">terminal</span>
+                        <span class="text-xs font-mono uppercase tracking-widest text-blue-400 font-bold">Session Security</span>
+                    </div>
+                    <p class="text-xs text-slate-400 leading-relaxed font-mono">All credentials are encrypted at rest. Private keys are never transmitted outside your server.</p>
                 </div>
             </div>
         </div>
@@ -181,7 +228,7 @@ function updatePreview() {
     const port = document.querySelector('[name="port"]').value || '22';
     const user = document.querySelector('[name="username"]').value || 'root';
     const proto = document.querySelector('[name="protocol"]').value || 'ssh';
-    document.getElementById('connPreview').textContent = `${proto}://${user}@${host}:${port}`;
+    document.getElementById('connPreview').textContent = `${proto} ${user}@${host} -p ${port}`;
 }
 ['host','port','username','protocol'].forEach(n => {
     document.querySelector(`[name="${n}"]`)?.addEventListener('input', updatePreview);
@@ -219,8 +266,7 @@ if (clearBtn) {
     clearBtn.addEventListener('click', async () => {
         if (!confirm('Clear stored username and password?')) return;
         const res = await apiFetch(`/api/connections/${connId}`, {
-            method: 'PUT',
-            body: JSON.stringify({ password: '', username: '' }),
+            method: 'PUT', body: JSON.stringify({ password: '', username: '' }),
         });
         const data = await res.json();
         if (data.error) alert(data.error);
@@ -228,4 +274,15 @@ if (clearBtn) {
     });
 }
 </script>
+
+<!-- Fixed Footer Action Bar -->
+<footer class="fixed bottom-0 left-0 md:left-56 right-0 bg-slate-950/90 backdrop-blur-md border-t border-slate-800 p-4 z-50">
+    <div class="max-w-6xl mx-auto px-6 xl:px-8 flex items-center justify-end gap-3">
+        <a href="/connections" class="px-5 py-2.5 text-sm font-mono text-slate-400 hover:text-slate-100 transition-colors uppercase tracking-widest">Cancel</a>
+        <button type="submit" form="connForm" class="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 active:opacity-80 text-white text-sm font-mono font-bold rounded-lg shadow-lg shadow-blue-500/20 transition-all uppercase tracking-widest flex items-center gap-2">
+            {{ 'Save Changes' if connection else 'Create Connection' }}
+            <span class="material-symbols-outlined text-sm">bolt</span>
+        </button>
+    </div>
+</footer>
 {% endblock %}
