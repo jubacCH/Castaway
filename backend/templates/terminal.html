@@ -3,7 +3,10 @@
 
 {% block head %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
-<style>#terminal-container { height: calc(100vh - 4rem); } .xterm { height: 100%; }</style>
+<style>
+    #terminal-container { height: calc(100vh - 4rem - 2.5rem); }
+    .xterm { height: 100%; }
+</style>
 {% endblock %}
 
 {% block topbar %}
@@ -11,19 +14,28 @@
     <a href="/connections" class="text-slate-500 hover:text-slate-300 transition-colors">
         <span class="material-symbols-outlined">arrow_back</span>
     </a>
-    <div>
-        <span class="font-bold text-slate-100 font-headline">{{ connection.name }}</span>
-        <span class="text-xs text-slate-500 font-mono ml-2">{{ connection.username or 'root' }}@{{ connection.host }}:{{ connection.port }}</span>
+    <div class="flex flex-col">
+        <span class="font-bold text-slate-100 font-headline leading-tight">{{ connection.name }}</span>
+        <span class="text-xs text-slate-500 font-mono">{{ connection.username or 'root' }}@{{ connection.host }}:{{ connection.port }}</span>
     </div>
 </div>
-<div class="flex items-center gap-3">
+<div class="flex items-center gap-4">
     <div class="flex items-center gap-2">
-        <div id="statusDot" class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div>
-        <span id="status" class="text-xs text-yellow-400 font-label">Connecting...</span>
+        <div id="statusDot" class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse shadow-[0_0_8px_rgba(250,204,21,0.6)]"></div>
+        <span id="status" class="text-xs text-yellow-400 font-mono">Connecting...</span>
     </div>
-    <button onclick="disconnect()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1">
-        <span class="material-symbols-outlined text-[16px]">power_settings_new</span>
-        Disconnect
+    <div class="hidden md:flex items-center gap-2">
+        <button onclick="toggleTerminalInfo()" class="p-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded transition-colors" title="Connection info">
+            <span class="material-symbols-outlined text-[18px]">info</span>
+        </button>
+        <button onclick="disconnect()" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded transition-colors uppercase tracking-wider flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[15px]">power_settings_new</span>
+            Disconnect
+        </button>
+    </div>
+    <!-- Mobile disconnect -->
+    <button onclick="disconnect()" class="md:hidden text-red-400">
+        <span class="material-symbols-outlined">power_settings_new</span>
     </button>
 </div>
 {% endblock %}
@@ -31,16 +43,40 @@
 {% block content %}
 <!-- Mobile notice — hidden on md+ screens -->
 <div class="md:hidden flex flex-col items-center justify-center h-[calc(100vh-4rem)] gap-4 px-6 text-center">
-    <div class="p-4 bg-slate-900/60 rounded-2xl border border-slate-800">
+    <div class="p-4 bg-slate-900/60 rounded-xl border border-slate-800">
         <span class="material-symbols-outlined text-slate-500 text-4xl">terminal</span>
     </div>
-    <h3 class="text-lg font-semibold text-slate-300 font-headline">Terminal not available on mobile</h3>
+    <h3 class="text-lg font-bold text-slate-300 font-headline">Terminal not available on mobile</h3>
     <p class="text-sm text-slate-500 max-w-xs">SSH terminals require a keyboard and sufficient screen space. Please open Castaway on a desktop or laptop.</p>
-    <a href="/connections" class="mt-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition-colors">
+    <a href="/connections" class="mt-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-sm transition-colors">
         Back to Connections
     </a>
 </div>
+<!-- Terminal -->
 <div id="terminal-container" class="hidden md:block bg-black"></div>
+<!-- Keyboard shortcuts footer -->
+<footer class="hidden md:flex h-10 bg-slate-900 border-t border-slate-700/50 px-5 items-center justify-between flex-shrink-0">
+    <div class="flex items-center gap-6">
+        <div class="flex items-center gap-2">
+            <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-300">Ctrl+Shift+C</kbd>
+            <span class="text-[11px] text-slate-500">Copy</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-300">Ctrl+Shift+V</kbd>
+            <span class="text-[11px] text-slate-500">Paste</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-300">Ctrl+Shift+D</kbd>
+            <span class="text-[11px] text-slate-500">Disconnect</span>
+        </div>
+    </div>
+    <div class="flex items-center gap-4">
+        <div class="h-3 w-[1px] bg-slate-700"></div>
+        <span class="text-[10px] font-mono text-slate-600 uppercase tracking-wider">UTF-8</span>
+        <div class="h-3 w-[1px] bg-slate-700"></div>
+        <span id="latencyDisplay" class="text-[10px] font-mono text-slate-600 uppercase tracking-wider">—ms</span>
+    </div>
+</footer>
 {% endblock %}
 
 {% block scripts %}
@@ -69,8 +105,8 @@ ws = new WebSocket(`${proto}//${location.host}/ws/ssh/${connId}`);
 
 ws.onopen = () => {
     document.getElementById('status').textContent = 'Connected';
-    document.getElementById('status').className = 'text-xs text-success font-label';
-    document.getElementById('statusDot').className = 'w-2 h-2 rounded-full bg-success animate-pulse';
+    document.getElementById('status').className = 'text-xs text-green-400 font-mono';
+    document.getElementById('statusDot').className = 'w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]';
     ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
 };
 ws.onmessage = (e) => {
@@ -84,13 +120,13 @@ ws.onmessage = (e) => {
 ws.onclose = () => {
     term.write('\r\n\x1b[33mConnection closed.\x1b[0m\r\n');
     document.getElementById('status').textContent = 'Disconnected';
-    document.getElementById('status').className = 'text-xs text-slate-500 font-label';
+    document.getElementById('status').className = 'text-xs text-slate-500 font-mono';
     document.getElementById('statusDot').className = 'w-2 h-2 rounded-full bg-slate-600';
 };
 ws.onerror = () => {
     document.getElementById('status').textContent = 'Error';
-    document.getElementById('status').className = 'text-xs text-red-400 font-label';
-    document.getElementById('statusDot').className = 'w-2 h-2 rounded-full bg-red-400';
+    document.getElementById('status').className = 'text-xs text-red-400 font-mono';
+    document.getElementById('statusDot').className = 'w-2 h-2 rounded-full bg-red-400 shadow-[0_0_8px_rgba(239,68,68,0.6)]';
 };
 term.onData((data) => { if (ws.readyState === WebSocket.OPEN) ws.send(data); });
 window.addEventListener('resize', () => {
@@ -99,6 +135,25 @@ window.addEventListener('resize', () => {
 });
 
 function disconnect() { ws.close(); window.location.href = '/connections'; }
+
+function toggleTerminalInfo() {
+    let panel = document.getElementById('termInfoPanel');
+    if (panel) { panel.remove(); return; }
+    panel = document.createElement('div');
+    panel.id = 'termInfoPanel';
+    panel.className = 'absolute top-14 right-4 z-50 bg-slate-900 border border-slate-700 rounded-lg p-4 shadow-2xl min-w-[220px]';
+    panel.innerHTML = `
+        <p class="text-[10px] text-slate-500 uppercase font-mono tracking-widest mb-3">Connection Info</p>
+        <div class="space-y-2 text-xs font-mono">
+            <div class="flex justify-between gap-4"><span class="text-slate-500">Host</span><span class="text-slate-300">{{ connection.host }}</span></div>
+            <div class="flex justify-between gap-4"><span class="text-slate-500">Port</span><span class="text-slate-300">{{ connection.port }}</span></div>
+            <div class="flex justify-between gap-4"><span class="text-slate-500">User</span><span class="text-slate-300">{{ connection.username or 'root' }}</span></div>
+            <div class="flex justify-between gap-4"><span class="text-slate-500">Protocol</span><span class="text-slate-300 uppercase">{{ connection.protocol }}</span></div>
+        </div>`;
+    document.querySelector('header').style.position = 'relative';
+    document.querySelector('header').appendChild(panel);
+    setTimeout(() => document.addEventListener('click', function h(e) { if (!panel.contains(e.target)) { panel.remove(); document.removeEventListener('click', h); } }), 0);
+}
 
 document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.shiftKey && e.key === 'C') { const sel = term.getSelection(); if (sel) { navigator.clipboard.writeText(sel); e.preventDefault(); } }
