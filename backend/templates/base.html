@@ -4,6 +4,7 @@
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>{% block title %}Castaway{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2300647c'/%3E%3Cpath d='M4 20 Q8 14 12 20 Q16 26 20 20 Q24 14 28 20' stroke='white' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
     {{ csrf_meta(request) }}
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries" nonce="{{ request.state.csp_nonce }}"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -126,6 +127,13 @@
     </div>
     <div class="flex items-center gap-3 shrink-0">
         {% block topbar_right %}{% endblock %}
+        <!-- User chip -->
+        <a href="/profile" class="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high transition-all" title="Profile">
+            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white text-[11px] font-bold font-headline shrink-0">
+                {{ user.username[0].upper() }}
+            </div>
+            <span class="text-sm font-medium text-on-surface hidden md:block">{{ user.username }}</span>
+        </a>
         <button onclick="logout()" class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-all" title="Disconnect">
             <span class="material-symbols-outlined text-[20px]">power_settings_new</span>
         </button>
@@ -228,22 +236,54 @@
 
 <!-- Mobile bottom nav -->
 <nav class="lg:hidden fixed bottom-4 left-4 right-4 h-16 glass-panel rounded-full border border-white/20 shadow-2xl z-50 flex items-center justify-around px-4">
-    <a href="/connections" class="p-3 {% if '/connections' in request.url.path %}text-primary{% else %}text-on-surface-variant{% endif %}">
-        <span class="material-symbols-outlined" {% if '/connections' in request.url.path %}style="font-variation-settings:'FILL' 1;"{% endif %}>lan</span>
+    <a href="/connections" class="p-3 {% if '/connections' in request.url.path and '/settings' not in request.url.path %}text-primary{% else %}text-on-surface-variant{% endif %}">
+        <span class="material-symbols-outlined" {% if '/connections' in request.url.path and '/settings' not in request.url.path %}style="font-variation-settings:'FILL' 1;"{% endif %}>lan</span>
     </a>
     <a href="/sessions" class="p-3 {% if '/sessions' in request.url.path %}text-primary{% else %}text-on-surface-variant{% endif %}">
-        <span class="material-symbols-outlined">history</span>
+        <span class="material-symbols-outlined" {% if '/sessions' in request.url.path %}style="font-variation-settings:'FILL' 1;"{% endif %}>history</span>
     </a>
     <a href="/connections/new" class="p-3 -mt-8 bg-gradient-to-br from-primary to-primary-container rounded-full shadow-lg shadow-primary/30 text-white">
         <span class="material-symbols-outlined">add</span>
     </a>
+    <a href="/profile" class="p-3 {% if '/profile' in request.url.path %}text-primary{% else %}text-on-surface-variant{% endif %}">
+        <span class="material-symbols-outlined" {% if '/profile' in request.url.path %}style="font-variation-settings:'FILL' 1;"{% endif %}>person</span>
+    </a>
+    {% if user.role == 'admin' %}
+    <button onclick="toggleAdminSheet()" id="mobileAdminBtn"
+        class="p-3 {% if '/users' in request.url.path or '/settings' in request.url.path %}text-primary{% else %}text-on-surface-variant{% endif %}">
+        <span class="material-symbols-outlined" {% if '/users' in request.url.path or '/settings' in request.url.path %}style="font-variation-settings:'FILL' 1;"{% endif %}>apps</span>
+    </button>
+    {% else %}
     <a href="/settings" class="p-3 {% if '/settings' in request.url.path %}text-primary{% else %}text-on-surface-variant{% endif %}">
         <span class="material-symbols-outlined">settings</span>
     </a>
-    <a href="/profile" class="p-3 {% if '/profile' in request.url.path %}text-primary{% else %}text-on-surface-variant{% endif %}">
-        <span class="material-symbols-outlined">person</span>
-    </a>
+    {% endif %}
 </nav>
+
+{% if user.role == 'admin' %}
+<!-- Admin quick-access sheet (mobile only) -->
+<div id="adminSheet" class="hidden lg:hidden fixed inset-x-4 bottom-24 z-[60] glass-panel rounded-[2rem] border border-white/20 shadow-2xl p-5">
+    <div class="text-[10px] font-bold tracking-[0.2em] uppercase text-outline/60 font-label mb-3">Admin</div>
+    <div class="grid grid-cols-4 gap-2">
+        <a href="/users" onclick="hideAdminSheet()" class="flex flex-col items-center gap-1.5 py-3 rounded-2xl hover:bg-surface-container transition-colors">
+            <span class="material-symbols-outlined text-primary text-[22px]" {% if '/users' in request.url.path %}style="font-variation-settings:'FILL' 1;"{% endif %}>group</span>
+            <span class="text-[10px] font-label text-on-surface-variant">Users</span>
+        </a>
+        <a href="/settings/phpipam" onclick="hideAdminSheet()" class="flex flex-col items-center gap-1.5 py-3 rounded-2xl hover:bg-surface-container transition-colors">
+            <span class="material-symbols-outlined text-primary text-[22px]" {% if 'phpipam' in request.url.path %}style="font-variation-settings:'FILL' 1;"{% endif %}>dns</span>
+            <span class="text-[10px] font-label text-on-surface-variant">IPAM</span>
+        </a>
+        <a href="/settings/vaultwarden" onclick="hideAdminSheet()" class="flex flex-col items-center gap-1.5 py-3 rounded-2xl hover:bg-surface-container transition-colors">
+            <span class="material-symbols-outlined text-primary text-[22px]" {% if 'vaultwarden' in request.url.path %}style="font-variation-settings:'FILL' 1;"{% endif %}>vpn_key</span>
+            <span class="text-[10px] font-label text-on-surface-variant">Keyring</span>
+        </a>
+        <a href="/settings" onclick="hideAdminSheet()" class="flex flex-col items-center gap-1.5 py-3 rounded-2xl hover:bg-surface-container transition-colors">
+            <span class="material-symbols-outlined text-primary text-[22px]" {% if request.url.path == '/settings' %}style="font-variation-settings:'FILL' 1;"{% endif %}>settings</span>
+            <span class="text-[10px] font-label text-on-surface-variant">Config</span>
+        </a>
+    </div>
+</div>
+{% endif %}
 
 {% else %}
     {% block fullpage %}{% endblock %}
@@ -353,7 +393,21 @@
         document.body.appendChild(modal);
         modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
     }
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') { const m = document.getElementById('shortcutModal'); if (m) m.remove(); }});
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { const m = document.getElementById('shortcutModal'); if (m) m.remove(); hideAdminSheet(); }});
+
+    function toggleAdminSheet() {
+        document.getElementById('adminSheet')?.classList.toggle('hidden');
+    }
+    function hideAdminSheet() {
+        document.getElementById('adminSheet')?.classList.add('hidden');
+    }
+    document.addEventListener('click', (e) => {
+        const sheet = document.getElementById('adminSheet');
+        const btn = document.getElementById('mobileAdminBtn');
+        if (sheet && !sheet.classList.contains('hidden') && btn && !sheet.contains(e.target) && !btn.contains(e.target)) {
+            sheet.classList.add('hidden');
+        }
+    });
 </script>
 {% block scripts %}{% endblock %}
 </body>
