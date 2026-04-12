@@ -82,7 +82,7 @@
     </div>
 
     <!-- Connection Cards Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="connectionGrid">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4" id="connectionGrid">
         {% for item in connections %}
         <div class="connection-card group glass-panel relative rounded-[2rem] border border-white/20 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-0.5 overflow-hidden"
              data-name="{{ item.conn.name|lower }}" data-host="{{ item.conn.host|lower }}"
@@ -94,7 +94,7 @@
             </div>
 
             <!-- Screenshot preview header -->
-            <div class="relative overflow-hidden bg-surface-container-high" style="height:180px">
+            <div class="relative overflow-hidden bg-surface-container-high" style="height:140px">
                 {% if item.conn.web_url %}
                 <img src="/api/connections/{{ item.conn.id }}/screenshot.jpg"
                      class="conn-screenshot w-full h-full object-cover object-top"
@@ -108,7 +108,7 @@
                 </div>
                 {% endif %}
                 <!-- Bottom fade -->
-                <div class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white/90 to-transparent pointer-events-none"></div>
+                <div class="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white/90 to-transparent pointer-events-none"></div>
                 <!-- Status badge -->
                 {% if item.conn.is_online is not none %}
                 <div class="absolute top-2.5 right-2.5">
@@ -134,9 +134,9 @@
             </div>
 
             <!-- Card body -->
-            <div class="p-5">
+            <div class="p-4">
                 <!-- Source + type badges -->
-                <div class="flex items-center gap-1.5 mb-1">
+                <div class="flex items-center gap-1 mb-0.5">
                     <span class="text-[10px] text-on-surface-variant/60 uppercase tracking-widest font-label">
                         {% if item.conn.source != 'manual' %}{{ item.conn.source }}{% else %}Manual{% endif %}
                     </span>
@@ -149,11 +149,11 @@
                     <span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-tertiary/10 text-tertiary border border-tertiary/20 font-label">WEB</span>
                     {% endif %}
                 </div>
-                <h3 class="font-headline text-lg font-bold text-on-surface leading-tight">{{ item.conn.name }}</h3>
-                <p class="text-outline text-sm font-body mt-0.5 mb-3">{{ item.conn.username or 'root' }}@{{ item.conn.host }}</p>
+                <h3 class="font-headline text-base font-bold text-on-surface leading-tight">{{ item.conn.name }}</h3>
+                <p class="text-outline text-xs font-body mt-0.5 mb-2">{{ item.conn.username or 'root' }}@{{ item.conn.host }}</p>
 
                 <!-- Stats -->
-                <div class="space-y-1.5 mb-4 border-t border-outline-variant/10 pt-3">
+                <div class="space-y-1 mb-3 border-t border-outline-variant/10 pt-2">
                     <div class="flex justify-between font-mono text-[11px]">
                         <span class="text-outline uppercase">Port</span>
                         <span class="text-on-surface font-medium">{{ item.conn.port or 22 }}</span>
@@ -166,7 +166,7 @@
 
                 <!-- Tags -->
                 {% if item.tags %}
-                <div class="flex flex-wrap gap-1.5 mb-4">
+                <div class="flex flex-wrap gap-1 mb-3">
                     {% for tag in item.tags %}
                     <span class="px-2.5 py-0.5 text-[10px] font-medium rounded-lg font-label"
                           style="background:{{ tag.color or '#00647c' }}15;color:{{ tag.color or '#00647c' }};">{{ tag.name }}</span>
