@@ -180,12 +180,9 @@ async def auth_middleware(request: Request, call_next):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
     if is_proxy:
-        # Proxied apps are sandboxed: cannot navigate top-level, no popups,
-        # cannot access cookies/storage of the parent origin.
-        response.headers["Content-Security-Policy"] = (
-            "sandbox allow-scripts allow-forms allow-same-origin allow-popups; "
-            "frame-ancestors 'self'"
-        )
+        # Proxied apps: only restrict framing — don't add sandbox CSP
+        # (sandbox breaks complex apps like Proxmox noVNC that need full JS APIs)
+        response.headers["Content-Security-Policy"] = "frame-ancestors 'self'"
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
     else:
         nonce = getattr(request.state, "csp_nonce", "")

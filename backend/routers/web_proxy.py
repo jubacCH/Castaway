@@ -240,9 +240,13 @@ async def proxy_request(conn_id: int, path: str, request: Request):
 
 @router.websocket("/web/{conn_id}/{path:path}")
 async def proxy_websocket(websocket: WebSocket, conn_id: int, path: str):
-    """Forward WebSocket traffic to the target."""
-    # Authenticate from cookie
+    """Forward WebSocket traffic to the target, preserving subprotocols (required for noVNC/Proxmox)."""
     from datetime import datetime
+    import asyncio
+    import ssl as ssl_mod
+    import websockets as ws_lib
+
+    # Authenticate from cookie
     token = websocket.cookies.get("castaway_session")
     if not token:
         await websocket.close(code=4401)
@@ -267,18 +271,27 @@ async def proxy_websocket(websocket: WebSocket, conn_id: int, path: str):
     parsed = urlparse(conn.web_url)
     scheme = "wss" if parsed.scheme == "https" else "ws"
     query = "?" + websocket.url.query if websocket.url.query else ""
-    target_ws = f"{scheme}://{parsed.netloc}/{path}{query}"
+    # Ensure path has leading slash
+    ws_path = "/" + path.lstrip("/") if path else "/"
+    target_ws = f"{scheme}://{parsed.netloc}{ws_path}{query}"
 
-    await websocket.accept()
+    # Extract subprotocols requested by client (critical for noVNC: "binary")
+    proto_header = websocket.headers.get("sec-websocket-protocol", "")
+    requested_subprotocols = [p.strip() for p in proto_header.split(",") if p.strip()]
 
-    # Bridge via websockets library
+    ssl_ctx = ssl_mod._create_unverified_context() if scheme == "wss" else None
+
     try:
-        import websockets
-        import ssl as ssl_mod
-        ssl_ctx = ssl_mod._create_unverified_context() if scheme == "wss" else None
-
-        async with websockets.connect(target_ws, ssl=ssl_ctx, max_size=None) as upstream:
-            import asyncio
+        async with ws_lib.connect(
+            target_ws,
+            ssl=ssl_ctx,
+            max_size=None,
+            subprotocols=requested_subprotocols or None,
+            open_timeout=10,
+        ) as upstream:
+            # Accept client with the subprotocol the upstream actually negotiated
+            negotiated = upstream.subprotocol
+            await websocket.accept(subprotocol=negotiated)
 
             async def client_to_upstream():
                 try:
@@ -286,26 +299,39 @@ async def proxy_websocket(websocket: WebSocket, conn_id: int, path: str):
                         msg = await websocket.receive()
                         if msg.get("type") == "websocket.disconnect":
                             break
-                        if "text" in msg and msg["text"] is not None:
-                            await upstream.send(msg["text"])
-                        elif "bytes" in msg and msg["bytes"] is not None:
+                        if "bytes" in msg and msg["bytes"] is not None:
                             await upstream.send(msg["bytes"])
+                        elif "text" in msg and msg["text"] is not None:
+                            await upstream.send(msg["text"])
                 except Exception:
                     pass
 
             async def upstream_to_client():
                 try:
                     async for msg in upstream:
-                        if isinstance(msg, str):
-                            await websocket.send_text(msg)
-                        else:
+                        if isinstance(msg, bytes):
                             await websocket.send_bytes(msg)
+                        else:
+                            await websocket.send_text(msg)
                 except Exception:
                     pass
 
             await asyncio.gather(client_to_upstream(), upstream_to_client())
+
+    except ws_lib.exceptions.InvalidURI as e:
+        logger.error("WebSocket proxy invalid URI %s: %s", target_ws, e)
+        try:
+            await websocket.close(code=4500)
+        except Exception:
+            pass
+    except ws_lib.exceptions.WebSocketException as e:
+        logger.error("WebSocket proxy error for conn %d: %s", conn_id, e)
+        try:
+            await websocket.close()
+        except Exception:
+            pass
     except Exception as e:
-        logger.error("WebSocket proxy error: %s", e)
+        logger.error("WebSocket proxy unexpected error: %s", e)
     finally:
         try:
             await websocket.close()
