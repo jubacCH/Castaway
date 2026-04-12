@@ -40,7 +40,13 @@
 {% endblock %}
 
 {% block content %}
-<div class="px-6 xl:px-8 py-8">
+{% set online_count = connections | selectattr('conn.is_online', 'equalto', true) | list | length if connections else 0 %}
+{% set total_count = connections | length if connections else 0 %}
+{% set health = 'Critical' if (total_count > 0 and online_count < total_count * 0.5) else ('Warning' if (total_count > 0 and online_count < total_count * 0.8) else 'Stable') %}
+{% set health_text_color = 'text-red-500' if health == 'Critical' else ('text-amber-500' if health == 'Warning' else 'text-primary') %}
+{% set health_bar_color = 'bg-red-400' if health == 'Critical' else ('bg-amber-400' if health == 'Warning' else 'bg-primary') %}
+{% set online_text_color = 'text-red-500' if (total_count > 0 and online_count < total_count) else 'text-on-surface' %}
+<div class="px-6 xl:px-8 py-8 pb-28 lg:pb-8">
 
     <!-- Bulk Action Bar -->
     <div id="bulkBar" class="hidden mb-6 p-4 glass-panel border border-white/20 rounded-2xl flex items-center gap-3">
@@ -57,21 +63,21 @@
         <div class="md:col-span-2 glass-panel p-6 rounded-[2rem] border border-white/20 shadow-sm flex items-center justify-between">
             <div>
                 <p class="text-xs font-bold tracking-widest uppercase text-outline font-label mb-1">Network Health</p>
-                <h3 class="font-headline text-3xl font-bold text-primary">Stable</h3>
+                <h3 class="font-headline text-3xl font-bold {{ health_text_color }}">{{ health }}</h3>
             </div>
-            <div class="h-14 w-28 bg-primary/5 rounded-2xl flex items-end p-2 gap-1 overflow-hidden">
+            <div class="h-14 w-28 {{ health_bar_color }}/5 rounded-2xl flex items-end p-2 gap-1 overflow-hidden">
                 {% for h in [50, 66, 75, 50, 66, 100] %}
-                <div class="flex-1 bg-primary rounded-full" style="height:{{ h }}%"></div>
+                <div class="flex-1 {{ health_bar_color }} rounded-full" style="height:{{ h }}%"></div>
                 {% endfor %}
             </div>
         </div>
         <div class="glass-panel p-6 rounded-[2rem] border border-white/20 shadow-sm">
             <p class="text-xs font-bold tracking-widest uppercase text-outline font-label mb-1">Total Nodes</p>
-            <h3 class="font-headline text-3xl font-bold text-on-surface connection-count-badge">{{ connections|length }}</h3>
+            <h3 class="font-headline text-3xl font-bold text-on-surface connection-count-badge">{{ total_count }}</h3>
         </div>
         <div class="glass-panel p-6 rounded-[2rem] border border-white/20 shadow-sm">
             <p class="text-xs font-bold tracking-widest uppercase text-outline font-label mb-1">Online</p>
-            <h3 class="font-headline text-3xl font-bold text-on-surface">{{ connections | selectattr('conn.is_online', 'equalto', true) | list | length }}</h3>
+            <h3 class="font-headline text-3xl font-bold {{ online_text_color }}">{{ online_count }}<span class="text-xl text-outline font-medium">/{{ total_count }}</span></h3>
         </div>
     </div>
 
