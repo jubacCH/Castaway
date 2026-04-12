@@ -1,104 +1,139 @@
 {% extends "base.html" %}
-{% block title %}Login — Castaway{% endblock %}
+{% block title %}Castaway | Initiate Connection{% endblock %}
+
+{% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+    body { font-family: 'Manrope', sans-serif; background: #f7f9fb; }
+    .glass-card {
+        background: rgba(255, 255, 255, 0.65);
+        backdrop-filter: blur(40px);
+        -webkit-backdrop-filter: blur(40px);
+    }
+    .glow-blob { filter: blur(150px); }
+    .login-primary { color: #00647c; }
+    .login-bg { background: #f7f9fb; }
+</style>
+{% endblock %}
 
 {% block fullpage %}
-<div class="min-h-screen flex items-center justify-center bg-slate-950 relative overflow-hidden p-4">
-    <!-- Decorative background glows -->
-    <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
-        <div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full"></div>
-        <div class="absolute -bottom-[10%] -right-[10%] w-[30%] h-[30%] bg-blue-500/5 blur-[100px] rounded-full"></div>
-    </div>
+<div class="min-h-screen overflow-hidden relative flex items-center justify-center login-bg">
+    <!-- Background blobs -->
+    <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full glow-blob" style="background:rgba(0,100,124,0.1)"></div>
+    <div class="absolute bottom-[-15%] right-[-5%] w-[600px] h-[600px] rounded-full glow-blob" style="background:rgba(111,95,234,0.08)"></div>
+    <div class="absolute top-[20%] right-[10%] w-[300px] h-[300px] rounded-full glow-blob" style="background:rgba(207,226,249,0.25)"></div>
 
-    <main class="w-full max-w-md relative z-10">
-        <!-- Brand -->
-        <div class="mb-8 text-center">
-            <div class="flex items-center justify-center gap-2 mb-2">
-                <span class="material-symbols-outlined text-blue-500 text-3xl" style="font-variation-settings: 'FILL' 1;">anchor</span>
-                <span class="text-3xl font-mono font-black tracking-tight text-slate-100">Castaway</span>
+    <main class="relative z-10 w-full max-w-md px-6">
+        <!-- Branding -->
+        <div class="text-center mb-12">
+            <div class="inline-flex items-center justify-center w-20 h-20 mb-6 rounded-[2rem] shadow-2xl rotate-12"
+                 style="background:linear-gradient(135deg,#00647c,#007f9c);box-shadow:0 20px 60px rgba(0,100,124,0.25)">
+                <span class="material-symbols-outlined text-white text-4xl" style="font-variation-settings:'FILL' 1;">waves</span>
             </div>
-            <p class="text-slate-400 font-mono text-sm tracking-wider">Secure SSH Session Management</p>
+            <h1 class="text-5xl font-bold tracking-tighter mb-2" style="font-family:'Space Grotesk',sans-serif;color:#191c1e;">Castaway</h1>
+            <p class="text-sm uppercase tracking-wide" style="font-family:'Manrope',sans-serif;color:rgba(65,71,85,0.7);">Secure Communication Node</p>
         </div>
 
-        <!-- Login Card -->
-        <div class="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 p-8 rounded-xl shadow-2xl">
-            <div class="mb-6">
-                <h1 id="loginTitle" class="text-2xl font-headline font-bold text-slate-100">Welcome back</h1>
-                <p class="text-slate-400 text-sm mt-1">Sign in to your terminal environment</p>
-            </div>
+        <!-- Error -->
+        <div id="error" class="hidden mb-5 p-3 rounded-2xl text-sm font-mono text-xs" style="background:rgba(186,26,26,0.1);border:1px solid rgba(186,26,26,0.2);color:#ba1a1a;"></div>
 
-            <div id="error" class="hidden mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-mono text-xs"></div>
+        <!-- Glassmorphism Card -->
+        <div class="glass-card rounded-[2.5rem] p-10 border shadow-[0_40px_100px_rgba(0,0,0,0.04)]" style="border-color:rgba(255,255,255,0.2);">
 
-            <!-- Step 1: Credentials -->
-            <form id="loginForm" class="space-y-5">
-                <div>
-                    <label class="block text-xs font-mono uppercase tracking-widest text-slate-400 mb-2">Username</label>
+            <!-- Login Form -->
+            <form id="loginForm" class="space-y-6">
+                <h2 id="loginTitle" class="text-2xl font-bold tracking-tight mb-2" style="font-family:'Space Grotesk',sans-serif;color:#191c1e;">Welcome back</h2>
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold tracking-widest uppercase ml-4" style="color:rgba(65,71,85,0.6);font-family:'Manrope',sans-serif;">Identity Handle</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-symbols-outlined text-slate-500 text-sm">person</span>
-                        </div>
+                        <span class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2" style="color:rgba(113,119,134,0.5);">alternate_email</span>
                         <input type="text" name="username" required autofocus placeholder="admin"
-                            class="block w-full pl-10 bg-slate-950 border border-slate-700 text-slate-100 text-sm rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors placeholder:text-slate-600 font-mono py-2.5">
+                            class="w-full border-none rounded-full py-4 pl-14 pr-6 focus:ring-2 transition-all"
+                            style="background:rgba(230,232,234,0.4);font-family:'Manrope',sans-serif;color:#191c1e;--tw-ring-color:rgba(0,100,124,0.2);">
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-mono uppercase tracking-widest text-slate-400 mb-2">Password</label>
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold tracking-widest uppercase ml-4" style="color:rgba(65,71,85,0.6);font-family:'Manrope',sans-serif;">Frequency Key</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-symbols-outlined text-slate-500 text-sm">lock</span>
-                        </div>
-                        <input type="password" name="password" required placeholder="••••••••"
-                            class="block w-full pl-10 bg-slate-950 border border-slate-700 text-slate-100 text-sm rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors placeholder:text-slate-600 font-mono py-2.5">
+                        <span class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2" style="color:rgba(113,119,134,0.5);">key</span>
+                        <input type="password" name="password" required placeholder="••••••••••••"
+                            class="w-full border-none rounded-full py-4 pl-14 pr-14 focus:ring-2 transition-all"
+                            style="background:rgba(230,232,234,0.4);font-family:'Manrope',sans-serif;color:#191c1e;--tw-ring-color:rgba(0,100,124,0.2);">
+                        <button type="button" id="togglePwd" class="absolute right-5 top-1/2 -translate-y-1/2 transition-colors" style="color:rgba(113,119,134,0.5);">
+                            <span class="material-symbols-outlined">visibility</span>
+                        </button>
                     </div>
                 </div>
-                <button type="submit"
-                    class="w-full flex justify-center items-center gap-2 py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-bold transition-all active:scale-[0.98] font-mono uppercase tracking-wider">
-                    Sign in
-                    <span class="material-symbols-outlined text-sm">login</span>
-                </button>
+                <div class="pt-2">
+                    <button type="submit"
+                        class="w-full text-white font-bold text-lg py-5 rounded-full shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                        style="background:linear-gradient(135deg,#00647c,#007f9c);box-shadow:0 20px 40px rgba(0,100,124,0.3);font-family:'Space Grotesk',sans-serif;">
+                        Initiate Connection
+                        <span class="material-symbols-outlined">rocket_launch</span>
+                    </button>
+                </div>
+                <div class="flex justify-between items-center px-2 pt-2">
+                    <a href="/register" class="text-xs font-medium hover:underline underline-offset-4" style="color:#00647c;">Request Access</a>
+                </div>
             </form>
 
-            <!-- Step 2: MFA -->
-            <form id="mfaForm" class="space-y-5 hidden">
-                <p class="text-sm text-slate-400 font-mono">Enter the 6-digit code from your authenticator app</p>
-                <div>
-                    <label class="block text-xs font-mono uppercase tracking-widest text-slate-400 mb-2">MFA Code</label>
+            <!-- MFA Form -->
+            <form id="mfaForm" class="space-y-6 hidden">
+                <h2 class="text-2xl font-bold tracking-tight mb-2" style="font-family:'Space Grotesk',sans-serif;color:#191c1e;">Two-Factor Auth</h2>
+                <p class="text-sm" style="color:rgba(65,71,85,0.8);font-family:'Manrope',sans-serif;">Enter the 6-digit code from your authenticator</p>
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold tracking-widest uppercase ml-4" style="color:rgba(65,71,85,0.6);font-family:'Manrope',sans-serif;">Auth Code</label>
                     <input type="text" name="mfa_code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"
-                        class="w-full px-3 py-3 bg-slate-950 border border-slate-700 rounded text-slate-100 text-center text-2xl font-mono tracking-[0.3em] placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                        class="w-full border-none rounded-full py-4 text-center text-2xl tracking-[0.3em] focus:ring-2 transition-all"
+                        style="background:rgba(230,232,234,0.4);font-family:'JetBrains Mono',monospace;color:#191c1e;--tw-ring-color:rgba(0,100,124,0.2);">
                 </div>
                 <button type="submit"
-                    class="w-full flex justify-center items-center gap-2 py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-bold transition-all active:scale-[0.98] font-mono uppercase tracking-wider">
-                    <span class="material-symbols-outlined text-sm">verified_user</span> Verify
+                    class="w-full text-white font-bold text-lg py-5 rounded-full shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                    style="background:linear-gradient(135deg,#00647c,#007f9c);font-family:'Space Grotesk',sans-serif;">
+                    <span class="material-symbols-outlined">verified_user</span> Verify
                 </button>
-                <button type="button" id="cancelMfa" class="w-full text-xs text-slate-500 hover:text-slate-300 font-mono transition-colors">← Back to login</button>
+                <button type="button" id="cancelMfa" class="w-full text-xs font-medium transition-colors" style="color:rgba(65,71,85,0.6);font-family:'Manrope',sans-serif;">← Back to login</button>
             </form>
-
-            <!-- Register link -->
-            <div class="mt-6 pt-5 border-t border-slate-700/50 text-center">
-                <p class="text-sm text-slate-400 font-mono">
-                    New to the deck?
-                    <a href="/register" class="font-semibold text-blue-400 hover:text-blue-300 transition-colors ml-1">Register</a>
-                </p>
-            </div>
         </div>
 
-        <!-- Footer -->
-        <div class="mt-6 flex flex-wrap justify-center gap-6 opacity-30 hover:opacity-70 transition-all duration-500">
-            <div class="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-tighter text-slate-400">
-                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                v0.1.0
+        <!-- Status bar -->
+        <div class="mt-12 flex justify-center gap-8 items-center" style="opacity:0.35;">
+            <div class="flex items-center gap-2">
+                <div class="w-1.5 h-1.5 rounded-full animate-pulse" style="background:#00647c;"></div>
+                <span class="text-[10px] font-bold tracking-[0.2em] uppercase" style="font-family:'Manrope',sans-serif;color:#191c1e;">Core Online</span>
             </div>
-            <div class="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-tighter text-slate-400">
-                <span class="material-symbols-outlined text-[12px]">shield</span>
-                AES-256 encrypted
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[14px]" style="color:#191c1e;">encrypted</span>
+                <span class="text-[10px] font-bold tracking-[0.2em] uppercase" style="font-family:'Manrope',sans-serif;color:#191c1e;">256-bit Enc</span>
             </div>
         </div>
     </main>
+
+    <!-- Wave decoration -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden" style="opacity:0.15;">
+        <svg class="absolute bottom-0 left-0 w-full" viewBox="0 0 1440 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,192L48,176C96,160,192,128,288,128C384,128,480,160,576,186.7C672,213,768,235,864,224C960,213,1056,171,1152,149.3C1248,128,1344,128,1392,128L1440,128L1440,320L0,320Z" fill="url(#wg)"/>
+            <defs>
+                <linearGradient id="wg" x1="720" x2="720" y1="128" y2="320" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#00647c" stop-opacity="0.3"/>
+                    <stop offset="1" stop-color="#f7f9fb" stop-opacity="0"/>
+                </linearGradient>
+            </defs>
+        </svg>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script nonce="{{ request.state.csp_nonce }}">
 let savedCreds = null;
+
+document.getElementById('togglePwd')?.addEventListener('click', () => {
+    const inp = document.querySelector('input[name="password"]');
+    const icon = document.querySelector('#togglePwd .material-symbols-outlined');
+    if (inp.type === 'password') { inp.type = 'text'; icon.textContent = 'visibility_off'; }
+    else { inp.type = 'password'; icon.textContent = 'visibility'; }
+});
 
 async function attemptLogin(username, password, mfaCode) {
     const body = { username, password };
@@ -119,7 +154,6 @@ function showError(msg) {
 function showMfaStep() {
     document.getElementById('loginForm').classList.add('hidden');
     document.getElementById('mfaForm').classList.remove('hidden');
-    document.getElementById('loginTitle').textContent = 'Two-Factor Auth';
     document.getElementById('error').classList.add('hidden');
     setTimeout(() => document.querySelector('input[name="mfa_code"]').focus(), 100);
 }
@@ -127,7 +161,6 @@ function showMfaStep() {
 function showLoginStep() {
     document.getElementById('mfaForm').classList.add('hidden');
     document.getElementById('loginForm').classList.remove('hidden');
-    document.getElementById('loginTitle').textContent = 'Sign in';
     document.getElementById('error').classList.add('hidden');
     savedCreds = null;
 }
