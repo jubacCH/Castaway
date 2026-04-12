@@ -122,10 +122,21 @@
                 <div class="w-12 h-12 rounded-2xl bg-surface-container-high flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                     <span class="material-symbols-outlined text-primary">{% if item.conn.protocol == 'rdp' %}desktop_windows{% else %}terminal{% endif %}</span>
                 </div>
-                <span class="text-[10px] text-on-surface-variant/60 uppercase tracking-widest font-label">
-                    {% if item.conn.source != 'manual' %}{{ item.conn.source }}{% else %}Manual{% endif %}
-                </span>
-                <h3 class="font-headline text-xl font-bold text-on-surface mt-0.5 leading-tight">{{ item.conn.name }}</h3>
+                <div class="flex items-center gap-1.5 mb-1">
+                    <span class="text-[10px] text-on-surface-variant/60 uppercase tracking-widest font-label">
+                        {% if item.conn.source != 'manual' %}{{ item.conn.source }}{% else %}Manual{% endif %}
+                    </span>
+                    <!-- Type badges -->
+                    {% if item.conn.protocol == 'ssh' %}
+                    <span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-primary/10 text-primary border border-primary/20 font-label">SSH</span>
+                    {% elif item.conn.protocol == 'rdp' %}
+                    <span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-rdp/10 text-rdp border border-rdp/20 font-label">RDP</span>
+                    {% endif %}
+                    {% if item.conn.web_url %}
+                    <span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-tertiary/10 text-tertiary border border-tertiary/20 font-label">WEB</span>
+                    {% endif %}
+                </div>
+                <h3 class="font-headline text-xl font-bold text-on-surface leading-tight">{{ item.conn.name }}</h3>
                 <p class="text-outline text-sm font-body mt-0.5">{{ item.conn.username or 'root' }}@{{ item.conn.host }}</p>
             </div>
 
@@ -151,23 +162,27 @@
             </div>
             {% endif %}
 
-            <!-- Connect button -->
-            {% if item.conn.web_url %}
-            <a href="{% if item.conn.subdomain and proxy_domain %}https://{{ item.conn.subdomain }}.{{ proxy_domain }}/{% else %}/web/{{ item.conn.id }}/{% endif %}" target="_blank"
-                class="w-full flex justify-center items-center gap-1.5 bg-gradient-to-r from-primary to-primary-container text-white font-label text-xs font-bold py-2.5 rounded-full shadow-md active:scale-95 transition-all">
-                <span class="material-symbols-outlined text-[14px]">open_in_new</span> Open Web
-            </a>
-            {% elif item.conn.protocol == 'ssh' %}
-            <a href="/terminal/{{ item.conn.id }}"
-                class="w-full flex justify-center items-center gap-1.5 bg-gradient-to-r from-primary to-primary-container text-white font-label text-xs font-bold py-2.5 rounded-full shadow-md active:scale-95 transition-all">
-                <span class="material-symbols-outlined text-[14px]">terminal</span> Connect
-            </a>
-            {% elif item.conn.protocol == 'rdp' %}
-            <a href="/api/connections/{{ item.conn.id }}/rdp-file"
-                class="w-full flex justify-center items-center gap-1.5 bg-tertiary text-white font-label text-xs font-bold py-2.5 rounded-full shadow-md active:scale-95 transition-all">
-                <span class="material-symbols-outlined text-[14px]">download</span> Download RDP
-            </a>
-            {% endif %}
+            <!-- Connect buttons — beide anzeigen wenn SSH + Web verfügbar -->
+            <div class="flex gap-2">
+                {% if item.conn.protocol == 'ssh' %}
+                <a href="/terminal/{{ item.conn.id }}"
+                    class="{% if item.conn.web_url %}flex-1{% else %}w-full{% endif %} flex justify-center items-center gap-1.5 bg-gradient-to-r from-primary to-primary-container text-white font-label text-xs font-bold py-2.5 rounded-full shadow-md shadow-primary/15 active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-[14px]">terminal</span> SSH
+                </a>
+                {% endif %}
+                {% if item.conn.web_url %}
+                <a href="{% if item.conn.subdomain and proxy_domain %}https://{{ item.conn.subdomain }}.{{ proxy_domain }}/{% else %}/web/{{ item.conn.id }}/{% endif %}" target="_blank"
+                    class="{% if item.conn.protocol == 'ssh' %}flex-1 bg-surface-container border border-primary/20 text-primary hover:bg-primary/5{% else %}w-full bg-gradient-to-r from-primary to-primary-container text-white shadow-md shadow-primary/15{% endif %} flex justify-center items-center gap-1.5 font-label text-xs font-bold py-2.5 rounded-full active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-[14px]">open_in_new</span> Web
+                </a>
+                {% endif %}
+                {% if item.conn.protocol == 'rdp' %}
+                <a href="/api/connections/{{ item.conn.id }}/rdp-file"
+                    class="w-full flex justify-center items-center gap-1.5 bg-rdp text-white font-label text-xs font-bold py-2.5 rounded-full shadow-md active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-[14px]">download</span> Download RDP
+                </a>
+                {% endif %}
+            </div>
         </div>
         {% endfor %}
 
