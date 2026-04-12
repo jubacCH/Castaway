@@ -94,7 +94,7 @@
             </div>
 
             <!-- Screenshot preview header -->
-            <div class="relative overflow-hidden bg-surface-container-high" style="height:112px">
+            <div class="relative overflow-hidden bg-surface-container-high" style="height:180px">
                 {% if item.conn.web_url %}
                 <img src="/api/connections/{{ item.conn.id }}/screenshot.jpg"
                      class="conn-screenshot w-full h-full object-cover object-top"
@@ -108,7 +108,7 @@
                 </div>
                 {% endif %}
                 <!-- Bottom fade -->
-                <div class="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white/80 to-transparent pointer-events-none"></div>
+                <div class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white/90 to-transparent pointer-events-none"></div>
                 <!-- Status badge -->
                 {% if item.conn.is_online is not none %}
                 <div class="absolute top-2.5 right-2.5">
