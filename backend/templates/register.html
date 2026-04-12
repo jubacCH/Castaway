@@ -1,53 +1,115 @@
 {% extends "base.html" %}
 {% block title %}Register — Castaway{% endblock %}
 
-{% block fullpage %}
-<div class="min-h-screen flex items-center justify-center bg-slate-950 relative overflow-hidden">
-    <div class="absolute inset-0 opacity-[0.03]" style="background-image: repeating-linear-gradient(0deg, #3b82f6 0px, transparent 1px, transparent 60px), repeating-linear-gradient(90deg, #3b82f6 0px, transparent 1px, transparent 60px);"></div>
+{% block head %}
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.65);
+        backdrop-filter: blur(40px);
+        -webkit-backdrop-filter: blur(40px);
+    }
+    .glow-blob { filter: blur(150px); }
+</style>
+{% endblock %}
 
-    <div class="w-full max-w-sm relative z-10">
-        <div class="text-center mb-8">
-            <div class="inline-flex p-3 bg-blue-500/10 rounded-xl mb-4">
-                <span class="material-symbols-outlined text-blue-500 text-4xl" style="font-variation-settings: 'FILL' 1;">terminal</span>
+{% block fullpage %}
+<div class="min-h-screen overflow-hidden relative flex items-center justify-center bg-background">
+    <!-- Ethereal background blobs -->
+    <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary/10 glow-blob"></div>
+    <div class="absolute bottom-[-15%] right-[-5%] w-[600px] h-[600px] rounded-full bg-tertiary-container/15 glow-blob"></div>
+    <div class="absolute top-[20%] right-[10%] w-[300px] h-[300px] rounded-full bg-secondary-container/20 glow-blob"></div>
+
+    <main class="relative z-10 w-full max-w-md px-6">
+        <!-- Branding -->
+        <div class="text-center mb-10">
+            <div class="inline-flex items-center justify-center w-16 h-16 mb-5 rounded-[1.5rem] shadow-2xl rotate-12 bg-gradient-to-br from-primary to-primary-container"
+                 style="box-shadow:0 16px 48px rgba(0,100,124,0.25)">
+                <span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings:'FILL' 1;">waves</span>
             </div>
-            <h1 class="text-3xl font-bold text-white font-headline">Castaway</h1>
-            <p class="text-sm text-slate-500 mt-1 font-label">
-                {% if first_user %}Create your admin account{% else %}Create new user{% endif %}
+            <h1 class="font-headline text-4xl font-bold tracking-tighter text-on-surface mb-1">Castaway</h1>
+            <p class="font-body text-on-surface-variant/70 tracking-wide text-sm uppercase">
+                {% if first_user %}Initial Setup{% else %}Request Access{% endif %}
             </p>
         </div>
-        <div class="bg-slate-900/60 backdrop-blur-sm rounded-xl border border-slate-800 p-6">
-            <h2 class="text-lg font-semibold text-white mb-5 font-headline">
-                {% if first_user %}Setup{% else %}Register{% endif %}
+
+        <!-- Error -->
+        <div id="error" class="hidden mb-5 p-3 rounded-2xl text-sm font-mono text-xs"
+             style="background:rgba(186,26,26,0.1);border:1px solid rgba(186,26,26,0.2);color:#ba1a1a;"></div>
+
+        <!-- Glassmorphism Card -->
+        <div class="glass-card rounded-[2.5rem] p-10 border border-white/20 shadow-[0_40px_100px_rgba(0,0,0,0.04)]">
+            <h2 class="font-headline text-2xl font-bold tracking-tight mb-6 text-on-surface">
+                {% if first_user %}Create Admin Account{% else %}Create Account{% endif %}
             </h2>
-            <div id="error" class="hidden mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm"></div>
-            <form id="registerForm" class="space-y-4">
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1.5 font-label uppercase tracking-wider">Username</label>
-                    <input type="text" name="username" required autofocus
-                        class="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all">
+            <form id="registerForm" class="space-y-5">
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold tracking-widest text-on-surface-variant/60 ml-4 uppercase font-label">Username</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-outline/50">alternate_email</span>
+                        <input type="text" name="username" required autofocus placeholder="your-username"
+                            class="w-full border-none rounded-full py-4 pl-14 pr-6 focus:ring-2 focus:ring-primary/20 transition-all font-body text-on-surface placeholder:text-outline/40"
+                            style="background:rgba(230,232,234,0.4);">
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1.5 font-label uppercase tracking-wider">Email (optional)</label>
-                    <input type="email" name="email"
-                        class="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all">
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold tracking-widest text-on-surface-variant/60 ml-4 uppercase font-label">Email <span class="normal-case text-outline/40 tracking-normal">(optional)</span></label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-outline/50">mail</span>
+                        <input type="email" name="email" placeholder="you@example.com"
+                            class="w-full border-none rounded-full py-4 pl-14 pr-6 focus:ring-2 focus:ring-primary/20 transition-all font-body text-on-surface placeholder:text-outline/40"
+                            style="background:rgba(230,232,234,0.4);">
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1.5 font-label uppercase tracking-wider">Password</label>
-                    <input type="password" name="password" required minlength="8"
-                        class="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all">
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold tracking-widest text-on-surface-variant/60 ml-4 uppercase font-label">Password</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-outline/50">key</span>
+                        <input type="password" name="password" required minlength="8" placeholder="••••••••••••"
+                            class="w-full border-none rounded-full py-4 pl-14 pr-6 focus:ring-2 focus:ring-primary/20 transition-all font-body text-on-surface placeholder:text-outline/40"
+                            style="background:rgba(230,232,234,0.4);">
+                    </div>
                 </div>
-                <button type="submit"
-                    class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-colors active:scale-[0.98] flex items-center justify-center gap-2">
-                    <span class="material-symbols-outlined text-[18px]">person_add</span>
-                    {% if first_user %}Create Admin Account{% else %}Register{% endif %}
-                </button>
+                <div class="pt-2">
+                    <button type="submit"
+                        class="w-full bg-gradient-to-br from-primary to-primary-container text-white font-headline font-bold text-lg py-5 rounded-full shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                        style="box-shadow:0 20px 40px rgba(0,100,124,0.3);">
+                        {% if first_user %}Create Admin Account{% else %}Create Account{% endif %}
+                        <span class="material-symbols-outlined">person_add</span>
+                    </button>
+                </div>
             </form>
         </div>
+
         {% if not first_user %}
-        <p class="text-center mt-4 text-sm text-slate-500">
-            <a href="/login" class="text-blue-400 hover:text-blue-300">Back to login</a>
+        <p class="text-center mt-6 text-sm text-outline">
+            Already have access? <a href="/login" class="text-primary hover:underline underline-offset-4 font-medium">Sign in</a>
         </p>
         {% endif %}
+
+        <!-- Status bar -->
+        <div class="mt-10 flex justify-center gap-8 items-center opacity-40">
+            <div class="flex items-center gap-2">
+                <div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+                <span class="text-[10px] font-bold tracking-[0.2em] uppercase font-label text-on-surface">Core Online</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[14px] text-on-surface">encrypted</span>
+                <span class="text-[10px] font-bold tracking-[0.2em] uppercase font-label text-on-surface">256-bit Enc</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- Wave decoration -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden opacity-15">
+        <svg class="absolute bottom-0 left-0 w-full" viewBox="0 0 1440 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,192L48,176C96,160,192,128,288,128C384,128,480,160,576,186.7C672,213,768,235,864,224C960,213,1056,171,1152,149.3C1248,128,1344,128,1392,128L1440,128L1440,320L0,320Z" fill="url(#wg2)"/>
+            <defs>
+                <linearGradient id="wg2" x1="720" x2="720" y1="128" y2="320" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#00647c" stop-opacity="0.3"/>
+                    <stop offset="1" stop-color="#f7f9fb" stop-opacity="0"/>
+                </linearGradient>
+            </defs>
+        </svg>
     </div>
 </div>
 {% endblock %}

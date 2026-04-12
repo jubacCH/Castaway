@@ -1,61 +1,70 @@
 {% extends "base.html" %}
-{% block title %}Vaultwarden — Castaway{% endblock %}
+{% block title %}Keyring — Castaway{% endblock %}
 
 {% block topbar_left %}
-<span class="material-symbols-outlined text-blue-400 text-xl">lock</span>
-<h1 class="text-white font-headline font-semibold text-base">Vaultwarden Integration</h1>
-<span class="text-xs text-slate-500 font-label">Import credentials and assign to connections</span>
+<span class="material-symbols-outlined text-primary text-xl">vpn_key</span>
+<h1 class="font-headline font-semibold text-on-surface text-base">Keyring</h1>
+<span class="text-xs text-outline font-label">Import credentials and assign to connections</span>
 {% endblock %}
 
 {% block content %}
-<div class="p-6 max-w-4xl space-y-6">
+<div class="p-6 pb-28 lg:pb-6 max-w-4xl space-y-5">
 
     <!-- Config Form -->
-    <div class="bg-slate-900/40 border border-slate-800 rounded-xl p-6">
-        <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider font-label mb-5" id="formTitle">Add Vaultwarden Instance</h3>
-        <div id="error" class="hidden mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm"></div>
-        <form id="configForm" class="space-y-5">
-            <input type="hidden" name="config_id" value="">
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1.5 font-label">Name</label>
-                    <input type="text" name="name" required placeholder="My Vaultwarden"
-                        class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+    <div class="glass-panel rounded-[2rem] border border-white/20 shadow-xl overflow-hidden">
+        <div class="px-6 pt-6 pb-4 border-b border-outline-variant/15">
+            <div class="text-[10px] font-bold tracking-[0.2em] uppercase text-outline/60 font-label" id="formTitle">Add Vaultwarden Instance</div>
+        </div>
+        <div class="px-6 py-5">
+            <div id="error" class="hidden mb-4 p-3 rounded-2xl text-sm font-mono text-xs"
+                 style="background:rgba(186,26,26,0.08);border:1px solid rgba(186,26,26,0.15);color:#ba1a1a;"></div>
+            <form id="configForm" class="space-y-5">
+                <input type="hidden" name="config_id" value="">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold tracking-wide text-on-surface-variant/70 mb-1.5 font-label">Name</label>
+                        <input type="text" name="name" required placeholder="My Vaultwarden"
+                            class="w-full px-4 py-2.5 bg-surface-container-high border-none rounded-xl text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold tracking-wide text-on-surface-variant/70 mb-1.5 font-label">URL</label>
+                        <input type="url" name="url" required placeholder="https://vault.example.com"
+                            class="w-full px-4 py-2.5 bg-surface-container-high border-none rounded-xl text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold tracking-wide text-on-surface-variant/70 mb-1.5 font-label">Email</label>
+                        <input type="email" name="email" required
+                            class="w-full px-4 py-2.5 bg-surface-container-high border-none rounded-xl text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold tracking-wide text-on-surface-variant/70 mb-1.5 font-label">Master Password</label>
+                        <input type="password" name="password" required
+                            class="w-full px-4 py-2.5 bg-surface-container-high border-none rounded-xl text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1.5 font-label">URL</label>
-                    <input type="url" name="url" required placeholder="https://vault.example.com"
-                        class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                <div class="flex gap-2">
+                    <button type="submit"
+                        class="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary to-primary-container text-white text-sm font-semibold shadow-md shadow-primary/20 hover:shadow-lg transition-all active:scale-[0.98]">
+                        <span class="material-symbols-outlined text-[16px]">save</span> Save
+                    </button>
                 </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1.5 font-label">Email</label>
-                    <input type="email" name="email" required
-                        class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1.5 font-label">Master Password</label>
-                    <input type="password" name="password" required
-                        class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
-                </div>
-            </div>
-            <div class="flex gap-2">
-                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-colors active:scale-95">Save</button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 
     <!-- Existing Configs -->
     <div id="configsList"></div>
 
-    <!-- Credential Preview / Assignment -->
-    <div id="credPanel" class="hidden bg-slate-900/40 border border-slate-800 rounded-xl p-6">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider font-label" id="credTitle">Credentials</h3>
-            <button onclick="document.getElementById('credPanel').classList.add('hidden')" class="text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1">
+    <!-- Credential Panel -->
+    <div id="credPanel" class="hidden glass-panel rounded-[2rem] border border-white/20 shadow-xl overflow-hidden">
+        <div class="px-6 pt-6 pb-4 border-b border-outline-variant/15 flex items-center justify-between">
+            <div class="text-[10px] font-bold tracking-[0.2em] uppercase text-outline/60 font-label" id="credTitle">Credentials</div>
+            <button onclick="document.getElementById('credPanel').classList.add('hidden')"
+                class="flex items-center gap-1 text-xs text-outline hover:text-on-surface transition-colors">
                 <span class="material-symbols-outlined text-sm">close</span> Close
             </button>
         </div>
-        <div id="credContent"></div>
+        <div class="px-6 py-5" id="credContent"></div>
     </div>
 </div>
 {% endblock %}
@@ -71,29 +80,33 @@ async function loadConfigs() {
 
     if (!data.configs || data.configs.length === 0) {
         el.innerHTML = `
-            <div class="bg-slate-900/40 border border-slate-800 rounded-xl p-10 flex flex-col items-center justify-center text-center">
-                <span class="material-symbols-outlined text-4xl text-slate-600 mb-3">lock</span>
-                <p class="text-sm text-slate-500">No Vaultwarden instances configured yet</p>
+            <div class="glass-panel rounded-[2rem] border border-white/20 shadow-xl p-12 flex flex-col items-center justify-center text-center">
+                <span class="material-symbols-outlined text-5xl text-outline/30 mb-3">vpn_key</span>
+                <p class="text-sm text-outline">No Vaultwarden instances configured yet</p>
             </div>`;
         return;
     }
 
     el.innerHTML = data.configs.map(c => `
-        <div class="bg-slate-900/40 border border-slate-800 rounded-xl p-4 mb-3">
-            <div class="flex items-center justify-between">
+        <div class="glass-panel rounded-[2rem] border border-white/20 shadow-xl overflow-hidden mb-3">
+            <div class="px-5 py-4 flex items-center justify-between gap-4">
                 <div class="flex items-center gap-3 min-w-0">
-                    <span class="material-symbols-outlined text-slate-500 text-lg">lock</span>
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary/15 to-primary-container/15 flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-primary text-lg">vpn_key</span>
+                    </div>
                     <div class="min-w-0">
-                        <span class="font-semibold text-white text-sm">${c.name}</span>
-                        <span class="text-xs font-mono text-slate-500 ml-2">${c.url}</span>
-                        ${c.last_sync_at ? `<span class="text-[10px] text-slate-600 ml-2">Last sync: ${c.last_sync_at}</span>` : ''}
+                        <div class="font-semibold text-on-surface text-sm">${c.name}</div>
+                        <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                            <span class="text-xs font-mono text-outline">${c.url}</span>
+                            ${c.last_sync_at ? `<span class="text-[10px] text-outline/60">Synced: ${c.last_sync_at}</span>` : ''}
+                        </div>
                     </div>
                 </div>
-                <div class="flex gap-1.5 shrink-0">
-                    <button data-action="test" data-id="${c.id}" class="px-2 py-1 text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 rounded transition-colors">Test</button>
-                    <button data-action="creds" data-id="${c.id}" class="px-2 py-1 text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 rounded transition-colors">Credentials</button>
-                    <button data-action="match" data-id="${c.id}" class="px-2 py-1 text-xs bg-green-600/20 text-green-400 hover:bg-green-600/30 rounded transition-colors">Auto-Match</button>
-                    <button data-action="delete" data-id="${c.id}" class="px-2 py-1 text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded transition-colors">Delete</button>
+                <div class="flex gap-1.5 shrink-0 flex-wrap justify-end">
+                    <button data-action="test" data-id="${c.id}" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/15 transition-all">Test</button>
+                    <button data-action="creds" data-id="${c.id}" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-tertiary/10 text-tertiary hover:bg-tertiary/15 transition-all">Credentials</button>
+                    <button data-action="match" data-id="${c.id}" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-500/15 text-green-700 hover:bg-green-500/20 transition-all">Auto-Match</button>
+                    <button data-action="delete" data-id="${c.id}" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-error/10 text-error hover:bg-error/15 transition-all">Delete</button>
                 </div>
             </div>
         </div>
@@ -134,20 +147,20 @@ async function testConfig(id) {
     const panel = document.getElementById('credPanel');
     panel.classList.remove('hidden');
     document.getElementById('credTitle').textContent = 'Connection Test';
-    document.getElementById('credContent').innerHTML = '<p class="text-slate-400 text-sm">Testing...</p>';
+    document.getElementById('credContent').innerHTML = '<p class="text-outline text-sm flex items-center gap-2"><span class="material-symbols-outlined animate-spin text-primary text-[16px]">sync</span> Testing…</p>';
 
     const res = await apiFetch(`/api/vaultwarden/configs/${id}/test`, { method: 'POST' });
     const data = await res.json();
     document.getElementById('credContent').innerHTML = data.ok
-        ? `<p class="text-green-400 text-sm">Connected! Found ${data.login_items} login items in vault.</p>`
-        : `<p class="text-red-400 text-sm">Failed: ${data.error}</p>`;
+        ? `<p class="text-green-700 text-sm flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">check_circle</span> Connected! Found ${data.login_items} login items in vault.</p>`
+        : `<p class="text-error text-sm flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">error</span> Failed: ${data.error}</p>`;
 }
 
 async function showCredentials(id) {
     activeConfigId = id;
     const panel = document.getElementById('credPanel');
     panel.classList.remove('hidden');
-    document.getElementById('credTitle').textContent = 'Loading credentials...';
+    document.getElementById('credTitle').textContent = 'Loading credentials…';
     document.getElementById('credContent').innerHTML = '';
 
     const res = await apiFetch(`/api/vaultwarden/configs/${id}/preview`);
@@ -155,7 +168,7 @@ async function showCredentials(id) {
 
     if (data.error) {
         document.getElementById('credTitle').textContent = 'Error';
-        document.getElementById('credContent').innerHTML = `<p class="text-red-400 text-sm">${data.error}</p>`;
+        document.getElementById('credContent').innerHTML = `<p class="text-error text-sm">${data.error}</p>`;
         return;
     }
 
@@ -163,20 +176,31 @@ async function showCredentials(id) {
 
     if (data.credentials && data.credentials.length > 0) {
         const rows = data.credentials.map(c => `
-            <tr class="border-t border-slate-800/50 hover:bg-slate-800/30">
-                <td class="py-2 pr-4 text-white text-sm">${c.name}</td>
-                <td class="py-2 pr-4 text-slate-400 text-sm">${c.username || '-'}</td>
-                <td class="py-2 pr-4 font-mono text-slate-500 text-xs">${c.uris.join(', ') || '-'}</td>
-                <td class="py-2"><span class="text-[10px] ${c.has_password ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-slate-700/50 text-slate-500 border border-slate-700/30'} px-2 py-0.5 rounded">${c.has_password ? 'Yes' : 'No'}</span></td>
+            <tr class="border-t border-outline-variant/10 hover:bg-surface-container/30 transition-colors">
+                <td class="py-2.5 pr-4 text-on-surface text-sm font-medium">${c.name}</td>
+                <td class="py-2.5 pr-4 text-on-surface-variant text-sm">${c.username || '—'}</td>
+                <td class="py-2.5 pr-4 font-mono text-outline text-xs">${c.uris.join(', ') || '—'}</td>
+                <td class="py-2.5">
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${c.has_password
+                        ? 'bg-green-500/15 text-green-700 border border-green-500/20'
+                        : 'bg-surface-container text-outline border border-outline-variant/30'}">${c.has_password ? 'Yes' : 'No'}</span>
+                </td>
             </tr>
         `).join('');
         document.getElementById('credContent').innerHTML = `
-            <table class="w-full"><thead><tr class="text-xs text-slate-500 font-label uppercase tracking-wider text-left"><th class="pr-4 pb-3">Name</th><th class="pr-4 pb-3">Username</th><th class="pr-4 pb-3">URIs</th><th class="pb-3">Password</th></tr></thead><tbody>${rows}</tbody></table>`;
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead><tr class="text-[10px] text-outline/60 font-label uppercase tracking-[0.15em] text-left">
+                        <th class="pr-4 pb-3">Name</th><th class="pr-4 pb-3">Username</th><th class="pr-4 pb-3">URIs</th><th class="pb-3">Password</th>
+                    </tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>`;
     } else {
         document.getElementById('credContent').innerHTML = `
-            <div class="flex flex-col items-center py-6">
-                <span class="material-symbols-outlined text-3xl text-slate-600 mb-2">key_off</span>
-                <p class="text-sm text-slate-500">No login items found</p>
+            <div class="flex flex-col items-center py-8">
+                <span class="material-symbols-outlined text-4xl text-outline/30 mb-2">key_off</span>
+                <p class="text-sm text-outline">No login items found</p>
             </div>`;
     }
 }
@@ -185,7 +209,7 @@ async function autoMatch(id) {
     activeConfigId = id;
     const panel = document.getElementById('credPanel');
     panel.classList.remove('hidden');
-    document.getElementById('credTitle').textContent = 'Auto-Matching...';
+    document.getElementById('credTitle').textContent = 'Auto-Matching…';
     document.getElementById('credContent').innerHTML = '';
 
     const res = await apiFetch(`/api/vaultwarden/configs/${id}/auto-match`);
@@ -193,7 +217,7 @@ async function autoMatch(id) {
 
     if (data.error) {
         document.getElementById('credTitle').textContent = 'Error';
-        document.getElementById('credContent').innerHTML = `<p class="text-red-400 text-sm">${data.error}</p>`;
+        document.getElementById('credContent').innerHTML = `<p class="text-error text-sm">${data.error}</p>`;
         return;
     }
 
@@ -201,22 +225,32 @@ async function autoMatch(id) {
 
     if (data.matches && data.matches.length > 0) {
         const rows = data.matches.map((m, i) => `
-            <tr class="border-t border-slate-800/50 hover:bg-slate-800/30">
-                <td class="py-2 pr-4"><input type="checkbox" checked data-idx="${i}" class="match-cb rounded bg-slate-800 border-slate-600 text-blue-500"></td>
-                <td class="py-2 pr-4 text-white text-sm">${m.connection_name} <span class="font-mono text-xs text-slate-500">(${m.connection_host})</span></td>
-                <td class="py-2 pr-4 text-slate-300 text-sm">${m.credential_name} <span class="text-xs text-slate-500">${m.credential_username}</span></td>
-                <td class="py-2"><span class="text-[10px] bg-slate-700/50 text-slate-400 px-2 py-0.5 rounded border border-slate-700/30">${m.match_type}</span></td>
+            <tr class="border-t border-outline-variant/10 hover:bg-surface-container/30 transition-colors">
+                <td class="py-2.5 pr-4"><input type="checkbox" checked data-idx="${i}" class="match-cb rounded bg-surface-container border-outline-variant text-primary w-4 h-4"></td>
+                <td class="py-2.5 pr-4 text-on-surface text-sm">${m.connection_name} <span class="font-mono text-xs text-outline">(${m.connection_host})</span></td>
+                <td class="py-2.5 pr-4 text-on-surface-variant text-sm">${m.credential_name} <span class="text-xs text-outline">${m.credential_username}</span></td>
+                <td class="py-2.5"><span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-surface-container text-outline border border-outline-variant/30">${m.match_type}</span></td>
             </tr>
         `).join('');
         document.getElementById('credContent').innerHTML = `
-            <table class="w-full mb-4"><thead><tr class="text-xs text-slate-500 font-label uppercase tracking-wider text-left"><th class="pr-4 pb-3"></th><th class="pr-4 pb-3">Connection</th><th class="pr-4 pb-3">Credential</th><th class="pb-3">Match</th></tr></thead><tbody>${rows}</tbody></table>
-            <button data-action="apply" data-id="${id}" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-semibold transition-colors active:scale-95">Apply Selected</button>`;
+            <div class="overflow-x-auto mb-4">
+                <table class="w-full">
+                    <thead><tr class="text-[10px] text-outline/60 font-label uppercase tracking-[0.15em] text-left">
+                        <th class="pr-4 pb-3"></th><th class="pr-4 pb-3">Connection</th><th class="pr-4 pb-3">Credential</th><th class="pb-3">Match</th>
+                    </tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+            <button data-action="apply" data-id="${id}"
+                class="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary to-primary-container text-white text-sm font-semibold shadow-md shadow-primary/20 hover:shadow-lg transition-all active:scale-[0.98]">
+                <span class="material-symbols-outlined text-[16px]">link</span> Apply Selected
+            </button>`;
         window._matches = data.matches;
     } else {
         document.getElementById('credContent').innerHTML = `
-            <div class="flex flex-col items-center py-6">
-                <span class="material-symbols-outlined text-3xl text-slate-600 mb-2">link_off</span>
-                <p class="text-sm text-slate-500">No matches found. Make sure you have connections and credentials with matching hostnames.</p>
+            <div class="flex flex-col items-center py-8">
+                <span class="material-symbols-outlined text-4xl text-outline/30 mb-2">link_off</span>
+                <p class="text-sm text-outline">No matches found. Make sure you have connections and credentials with matching hostnames.</p>
             </div>`;
     }
 }
@@ -240,8 +274,8 @@ async function applyMatches(configId) {
     const data = await res.json();
 
     document.getElementById('credContent').innerHTML = `
-        <p class="text-green-400 text-sm">Assigned ${data.assigned} credentials</p>
-        ${data.errors && data.errors.length > 0 ? `<ul class="mt-2 text-xs text-red-400">${data.errors.map(e => `<li>${e}</li>`).join('')}</ul>` : ''}`;
+        <p class="text-green-700 text-sm flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">check_circle</span> Assigned ${data.assigned} credentials</p>
+        ${data.errors && data.errors.length > 0 ? `<ul class="mt-3 text-xs text-error space-y-1">${data.errors.map(e => `<li>• ${e}</li>`).join('')}</ul>` : ''}`;
 }
 
 async function deleteConfig(id) {

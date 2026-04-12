@@ -1,45 +1,71 @@
 {% extends "base.html" %}
-{% block title %}Session Log — Castaway{% endblock %}
+{% block title %}Archive — Castaway{% endblock %}
 
 {% block topbar_left %}
-<span class="material-symbols-outlined text-blue-400 text-xl">history</span>
-<h1 class="text-white font-headline font-semibold text-base">Session Log</h1>
-<span class="text-xs text-slate-500 font-label">SSH session audit trail</span>
+<span class="material-symbols-outlined text-primary text-xl">history</span>
+<h1 class="font-headline font-semibold text-on-surface text-base">Archive</h1>
+<span class="text-xs text-outline font-label">SSH session audit trail</span>
 {% endblock %}
 
 {% block content %}
-<div class="p-6 space-y-4">
+<div class="p-6 pb-28 lg:pb-6 space-y-4 max-w-6xl">
 
-    <div class="bg-slate-900/40 border border-slate-800 rounded-xl overflow-hidden">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-slate-800">
-                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider font-label">User</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider font-label">Connection</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider font-label">Host</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider font-label">Started</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider font-label">Duration</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider font-label">IP</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider font-label">Traffic</th>
-                </tr>
-            </thead>
-            <tbody id="sessionsBody">
-                <tr><td colspan="7" class="px-4 py-12 text-center">
-                    <span class="material-symbols-outlined text-3xl text-slate-700 mb-2 block">sync</span>
-                    <span class="text-sm text-slate-500">Loading...</span>
-                </td></tr>
-            </tbody>
-        </table>
+    <!-- Stats row -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="glass-panel rounded-[1.5rem] border border-white/20 shadow-md p-4">
+            <div class="text-[10px] font-bold tracking-[0.2em] uppercase text-outline/60 font-label mb-1">Total Sessions</div>
+            <div id="statTotal" class="text-2xl font-bold text-on-surface font-headline">—</div>
+        </div>
+        <div class="glass-panel rounded-[1.5rem] border border-white/20 shadow-md p-4">
+            <div class="text-[10px] font-bold tracking-[0.2em] uppercase text-outline/60 font-label mb-1">Active Now</div>
+            <div id="statActive" class="text-2xl font-bold text-primary font-headline">—</div>
+        </div>
+        <div class="glass-panel rounded-[1.5rem] border border-white/20 shadow-md p-4">
+            <div class="text-[10px] font-bold tracking-[0.2em] uppercase text-outline/60 font-label mb-1">Page</div>
+            <div id="statPage" class="text-2xl font-bold text-on-surface font-headline">1</div>
+        </div>
+        <div class="glass-panel rounded-[1.5rem] border border-white/20 shadow-md p-4">
+            <div class="text-[10px] font-bold tracking-[0.2em] uppercase text-outline/60 font-label mb-1">Showing</div>
+            <div id="statShowing" class="text-2xl font-bold text-on-surface font-headline">50</div>
+        </div>
     </div>
 
-    <div class="flex items-center justify-between">
-        <span id="totalInfo" class="text-xs text-slate-500 font-label"></span>
+    <!-- Table card -->
+    <div class="glass-panel rounded-[2rem] border border-white/20 shadow-xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-outline-variant/20">
+                        <th class="px-5 py-4 text-left text-[10px] font-bold text-outline/70 uppercase tracking-[0.15em] font-label">User</th>
+                        <th class="px-5 py-4 text-left text-[10px] font-bold text-outline/70 uppercase tracking-[0.15em] font-label">Connection</th>
+                        <th class="px-5 py-4 text-left text-[10px] font-bold text-outline/70 uppercase tracking-[0.15em] font-label hidden md:table-cell">Host</th>
+                        <th class="px-5 py-4 text-left text-[10px] font-bold text-outline/70 uppercase tracking-[0.15em] font-label">Started</th>
+                        <th class="px-5 py-4 text-left text-[10px] font-bold text-outline/70 uppercase tracking-[0.15em] font-label">Duration</th>
+                        <th class="px-5 py-4 text-left text-[10px] font-bold text-outline/70 uppercase tracking-[0.15em] font-label hidden lg:table-cell">IP</th>
+                        <th class="px-5 py-4 text-left text-[10px] font-bold text-outline/70 uppercase tracking-[0.15em] font-label hidden lg:table-cell">Traffic</th>
+                    </tr>
+                </thead>
+                <tbody id="sessionsBody">
+                    <tr><td colspan="7" class="px-5 py-16 text-center">
+                        <span class="material-symbols-outlined text-3xl text-outline/40 mb-2 block animate-pulse">sync</span>
+                        <span class="text-sm text-outline">Loading…</span>
+                    </td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex items-center justify-between px-1">
+        <span id="totalInfo" class="text-xs text-outline font-label"></span>
         <div class="flex gap-2">
-            <button onclick="prevPage()" id="prevBtn" class="px-3 py-1.5 text-xs bg-slate-800/50 border border-slate-700 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed" disabled>
-                <span class="material-symbols-outlined text-sm align-middle">chevron_left</span> Prev
+            <button onclick="prevPage()" id="prevBtn"
+                class="flex items-center gap-1 px-4 py-2 rounded-full text-xs font-semibold bg-surface-container text-on-surface-variant hover:text-on-surface transition-all disabled:opacity-40 disabled:cursor-not-allowed" disabled>
+                <span class="material-symbols-outlined text-sm">chevron_left</span> Prev
             </button>
-            <button onclick="nextPage()" id="nextBtn" class="px-3 py-1.5 text-xs bg-slate-800/50 border border-slate-700 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                Next <span class="material-symbols-outlined text-sm align-middle">chevron_right</span>
+            <button onclick="nextPage()" id="nextBtn"
+                class="flex items-center gap-1 px-4 py-2 rounded-full text-xs font-semibold bg-gradient-to-r from-primary to-primary-container text-white shadow-md shadow-primary/20 hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                Next <span class="material-symbols-outlined text-sm">chevron_right</span>
             </button>
         </div>
     </div>
@@ -71,24 +97,41 @@ async function loadSessions() {
     const body = document.getElementById('sessionsBody');
 
     if (!data.sessions || data.sessions.length === 0) {
-        body.innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center">
-            <span class="material-symbols-outlined text-4xl text-slate-700 mb-2 block">history_toggle_off</span>
-            <span class="text-sm text-slate-500">No sessions recorded yet</span>
+        body.innerHTML = `<tr><td colspan="7" class="px-5 py-16 text-center">
+            <span class="material-symbols-outlined text-4xl text-outline/30 mb-3 block">history_toggle_off</span>
+            <span class="text-sm text-outline">No sessions recorded yet</span>
         </td></tr>`;
+        document.getElementById('statTotal').textContent = '0';
+        document.getElementById('statActive').textContent = '0';
         return;
     }
 
+    const active = data.sessions.filter(s => !s.ended_at).length;
+    document.getElementById('statTotal').textContent = data.total;
+    document.getElementById('statActive').textContent = active;
+    document.getElementById('statPage').textContent = page + 1;
+    document.getElementById('statShowing').textContent = data.sessions.length;
+
     body.innerHTML = data.sessions.map(s => `
-        <tr class="border-t border-slate-800/50 hover:bg-slate-800/30 transition-colors">
-            <td class="px-4 py-2.5 text-white text-sm font-medium">${s.user}</td>
-            <td class="px-4 py-2.5 text-slate-300 text-sm">${s.connection_name}</td>
-            <td class="px-4 py-2.5 font-mono text-slate-500 text-xs">${s.connection_host}</td>
-            <td class="px-4 py-2.5 text-slate-400 text-xs">${s.started_at || '-'}</td>
-            <td class="px-4 py-2.5">
-                <span class="text-[10px] ${s.ended_at ? 'bg-slate-700/50 text-slate-400 border border-slate-700/30' : 'bg-green-500/20 text-green-400 border border-green-500/30'} px-2 py-0.5 rounded">${formatDuration(s.duration_sec)}</span>
+        <tr class="border-t border-outline-variant/10 hover:bg-surface-container/30 transition-colors">
+            <td class="px-5 py-3.5">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white text-[11px] font-bold font-headline shrink-0">
+                        ${s.user[0].toUpperCase()}
+                    </div>
+                    <span class="text-on-surface text-sm font-medium">${s.user}</span>
+                </div>
             </td>
-            <td class="px-4 py-2.5 font-mono text-slate-500 text-xs">${s.ip_address || '-'}</td>
-            <td class="px-4 py-2.5 font-mono text-slate-500 text-xs">${formatBytes(s.bytes_sent)} / ${formatBytes(s.bytes_recv)}</td>
+            <td class="px-5 py-3.5 text-on-surface-variant text-sm">${s.connection_name}</td>
+            <td class="px-5 py-3.5 font-mono text-outline text-xs hidden md:table-cell">${s.connection_host}</td>
+            <td class="px-5 py-3.5 text-outline text-xs">${s.started_at || '—'}</td>
+            <td class="px-5 py-3.5">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${s.ended_at
+                    ? 'bg-surface-container text-outline border border-outline-variant/30'
+                    : 'bg-green-500/15 text-green-700 border border-green-500/20'}">${formatDuration(s.duration_sec)}</span>
+            </td>
+            <td class="px-5 py-3.5 font-mono text-outline text-xs hidden lg:table-cell">${s.ip_address || '—'}</td>
+            <td class="px-5 py-3.5 font-mono text-outline text-xs hidden lg:table-cell">${formatBytes(s.bytes_sent)} / ${formatBytes(s.bytes_recv)}</td>
         </tr>
     `).join('');
 
