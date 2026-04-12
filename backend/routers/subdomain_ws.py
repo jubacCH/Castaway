@@ -62,11 +62,26 @@ async def subdomain_websocket(websocket: WebSocket, full_path: str):
     # Build target WS URL
     parsed = urlparse(conn.web_url)
     scheme = "wss" if parsed.scheme == "https" else "ws"
-    path = "/" + full_path
+    ws_path = "/" + full_path.lstrip("/") if full_path else "/"
     query = "?" + websocket.url.query if websocket.url.query else ""
-    target_ws = f"{scheme}://{parsed.netloc}{path}{query}"
+    target_ws = f"{scheme}://{parsed.netloc}{ws_path}{query}"
 
-    await websocket.accept(subprotocol=websocket.headers.get("sec-websocket-protocol"))
+    # Forward subprotocol (required for noVNC binary / Proxmox xtermjs)
+    proto_header = websocket.headers.get("sec-websocket-protocol", "")
+    requested_subprotocols = [p.strip() for p in proto_header.split(",") if p.strip()]
+
+    # Forward cookies (Proxmox validates session via PVEAuthCookie)
+    raw_cookies = websocket.headers.get("cookie", "")
+    filtered_cookies = "; ".join(
+        c for c in raw_cookies.split("; ")
+        if not c.strip().startswith(("castaway_session=", "cw_csrf="))
+    )
+
+    extra_headers = {"Origin": f"{parsed.scheme}://{parsed.netloc}"}
+    if filtered_cookies:
+        extra_headers["Cookie"] = filtered_cookies
+
+    logger.info("Subdomain WS proxy: %s -> %s (subprotocols=%s)", slug, target_ws, requested_subprotocols)
 
     try:
         import asyncio
@@ -74,40 +89,52 @@ async def subdomain_websocket(websocket: WebSocket, full_path: str):
         import websockets
 
         ssl_ctx = ssl_mod._create_unverified_context() if scheme == "wss" else None
-        subproto = websocket.headers.get("sec-websocket-protocol")
-        subprotocols = [subproto] if subproto else None
 
         async with websockets.connect(
-            target_ws, ssl=ssl_ctx, max_size=None,
-            subprotocols=subprotocols,
-            extra_headers={"Origin": f"{parsed.scheme}://{parsed.netloc}"},
+            target_ws,
+            ssl=ssl_ctx,
+            max_size=None,
+            subprotocols=requested_subprotocols or None,
+            extra_headers=extra_headers,
+            open_timeout=10,
         ) as upstream:
+            # Accept client with the subprotocol upstream actually negotiated
+            negotiated = upstream.subprotocol
+            await websocket.accept(subprotocol=negotiated)
+            logger.info("Subdomain WS connected: %s negotiated subprotocol=%s", target_ws, negotiated)
+
             async def c2u():
                 try:
                     while True:
                         msg = await websocket.receive()
                         if msg.get("type") == "websocket.disconnect":
                             break
-                        if "text" in msg and msg["text"] is not None:
-                            await upstream.send(msg["text"])
-                        elif "bytes" in msg and msg["bytes"] is not None:
+                        if "bytes" in msg and msg["bytes"] is not None:
                             await upstream.send(msg["bytes"])
+                        elif "text" in msg and msg["text"] is not None:
+                            await upstream.send(msg["text"])
                 except Exception:
                     pass
 
             async def u2c():
                 try:
                     async for msg in upstream:
-                        if isinstance(msg, str):
-                            await websocket.send_text(msg)
-                        else:
+                        if isinstance(msg, bytes):
                             await websocket.send_bytes(msg)
+                        else:
+                            await websocket.send_text(msg)
                 except Exception:
                     pass
 
             await asyncio.gather(c2u(), u2c())
+
     except Exception as e:
-        logger.error("Subdomain WS proxy error: %s", e)
+        logger.error("Subdomain WS proxy error for %s -> %s: %s", slug, target_ws, e, exc_info=True)
+        try:
+            await websocket.close(code=1011)
+        except Exception:
+            pass
+        return
     finally:
         try:
             await websocket.close()
