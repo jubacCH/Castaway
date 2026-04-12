@@ -7,6 +7,7 @@ from models.folder import Folder
 from models.tag import Tag, connection_tags
 from models.session_log import SessionLog
 from models.api_key import ApiKey
+from models.audit_log import AuditLog
 from models.phpipam_config import PhpIpamConfig
 from models.vaultwarden_config import VaultwardenConfig
 from models.setting import Setting
@@ -16,7 +17,7 @@ __all__ = [
     "encrypt_value", "decrypt_value",
     "User", "Session",
     "SSHConnection", "Folder", "Tag", "connection_tags",
-    "SessionLog", "ApiKey",
+    "SessionLog", "ApiKey", "AuditLog",
     "PhpIpamConfig", "VaultwardenConfig", "Setting",
 ]
 

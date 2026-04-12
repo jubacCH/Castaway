@@ -74,6 +74,9 @@ async def _get_current_user(request: Request):
                 select(ApiKey).where(ApiKey.key_hash == key_hash)
             )).scalar_one_or_none()
             if ak:
+                # Reject expired keys
+                if ak.expires_at and ak.expires_at < datetime.utcnow():
+                    return None
                 ak.last_used_at = datetime.utcnow()
                 await db.commit()
                 return (await db.execute(
@@ -169,14 +172,22 @@ async def auth_middleware(request: Request, call_next):
     # Set CSRF cookie
     set_csrf_cookie(request, response)
 
-    # Security headers — relaxed for /web/ proxy paths (proxied apps have own CSP)
+    # Security headers — restricted sandbox for /web/ proxy paths
     is_proxy = request.url.path.startswith("/web/")
     if not is_proxy:
         response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
-    if not is_proxy:
+    if is_proxy:
+        # Proxied apps are sandboxed: cannot navigate top-level, no popups,
+        # cannot access cookies/storage of the parent origin.
+        response.headers["Content-Security-Policy"] = (
+            "sandbox allow-scripts allow-forms allow-same-origin allow-popups; "
+            "frame-ancestors 'self'"
+        )
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    else:
         nonce = getattr(request.state, "csp_nonce", "")
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "

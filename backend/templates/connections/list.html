@@ -27,29 +27,50 @@
     <span class="material-symbols-outlined text-[16px]">photo_camera</span>
     Refresh Previews
 </button>
+<button id="bulkToggleBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5">
+    <span class="material-symbols-outlined text-[16px]">checklist</span>
+    Select
+</button>
 {% endif %}
+<button onclick="document.getElementById('importModal').classList.remove('hidden')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5">
+    <span class="material-symbols-outlined text-[16px]">upload</span>
+    Import
+</button>
 <a href="/connections/new" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold active:scale-95 transition-transform flex items-center gap-2 text-sm">
     <span class="material-symbols-outlined text-[18px]">add</span>
-    New Connection
+    New
 </a>
 {% endblock %}
 
 {% block content %}
 <div class="p-8">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
+    <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
             <h1 class="text-2xl font-bold text-slate-100 font-headline">Connections</h1>
-            <span class="bg-slate-800 text-slate-400 px-2 py-0.5 rounded text-xs font-label">{{ connections|length }}</span>
+            <span class="connection-count-badge bg-slate-800 text-slate-400 px-2 py-0.5 rounded text-xs font-label">{{ connections|length }}</span>
         </div>
+    </div>
+
+    <!-- Bulk Action Bar -->
+    <div id="bulkBar" class="hidden mb-4 p-3 bg-slate-900 border border-slate-700 rounded-xl flex items-center gap-3">
+        <span id="bulkCountLabel" class="text-sm text-slate-400 flex-1">None selected</span>
+        <button id="bulkSelectAllBtn" class="text-xs text-blue-400 hover:text-blue-300 font-semibold">Select All</button>
+        <button id="bulkDeleteBtn" disabled class="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold transition-colors">
+            <span class="material-symbols-outlined text-[14px]">delete</span> Delete Selected
+        </button>
     </div>
 
     {% if connections %}
     <!-- Bento Card Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="connectionGrid">
         {% for item in connections %}
-        <div class="connection-card group bg-slate-900/40 border border-slate-800 hover:border-slate-700 rounded-xl transition-all hover:bg-slate-900/60 flex flex-col overflow-hidden"
-             data-name="{{ item.conn.name|lower }}" data-host="{{ item.conn.host|lower }}" data-folder="{{ item.conn.folder_id or '' }}">
+        <div class="connection-card group bg-slate-900/40 border border-slate-800 hover:border-slate-700 rounded-xl transition-all hover:bg-slate-900/60 flex flex-col overflow-hidden relative"
+             data-name="{{ item.conn.name|lower }}" data-host="{{ item.conn.host|lower }}" data-folder="{{ item.conn.folder_id or '' }}" data-id="{{ item.conn.id }}">
+            <!-- Bulk select checkbox -->
+            <div class="bulk-checkbox-wrap hidden absolute top-2 left-2 z-10">
+                <input type="checkbox" class="bulk-checkbox w-4 h-4 accent-blue-500 rounded cursor-pointer">
+            </div>
             {% if item.conn.web_url %}
             <!-- Screenshot thumbnail -->
             <div class="relative w-full aspect-video bg-slate-950/60 overflow-hidden">
@@ -163,68 +184,347 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Import Modal -->
+<div id="importModal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-lg w-full mx-4 shadow-2xl">
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-500/10 rounded-lg"><span class="material-symbols-outlined text-blue-400">upload</span></div>
+                <div>
+                    <h3 class="font-bold text-slate-100">Import Connections</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">JSON (Castaway export) or CSV</p>
+                </div>
+            </div>
+            <button onclick="document.getElementById('importModal').classList.add('hidden')" class="text-slate-500 hover:text-slate-300">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-xs text-slate-400 mb-2 font-label">Format</label>
+            <div class="flex gap-2">
+                <button id="fmtJson" onclick="setFmt('json')" class="fmt-btn active-fmt flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors">JSON</button>
+                <button id="fmtCsv" onclick="setFmt('csv')" class="fmt-btn flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors">CSV</button>
+            </div>
+        </div>
+
+        <div id="csvHint" class="hidden mb-3 p-3 bg-slate-800/50 rounded-lg text-xs text-slate-400 font-mono">
+            name,host,port,protocol,username,notes
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-xs text-slate-400 mb-2 font-label">Paste or drop file content</label>
+            <textarea id="importText" rows="8" class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-slate-200 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none" placeholder='[{"name":"...","host":"..."}]'></textarea>
+        </div>
+
+        <div id="importResult" class="hidden mb-4 p-3 rounded-lg text-sm"></div>
+
+        <div class="flex gap-3 justify-end">
+            <button onclick="document.getElementById('importModal').classList.add('hidden')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition-colors">Cancel</button>
+            <button id="importBtn" onclick="doImport()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px]">upload</span> Import
+            </button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script nonce="{{ request.state.csp_nonce }}">
+// ── Filtering ────────────────────────────────────────────────────────────────
 function filterCards() {
     const q = document.getElementById('search').value.toLowerCase();
     const folderId = document.getElementById('folderFilter')?.value || '';
+    let visible = 0;
     document.querySelectorAll('.connection-card').forEach(card => {
         const textMatch = !q || card.dataset.name.includes(q) || card.dataset.host.includes(q);
         const folderMatch = !folderId || card.dataset.folder === folderId;
-        card.style.display = (textMatch && folderMatch) ? '' : 'none';
+        const show = textMatch && folderMatch;
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
     });
 }
 document.getElementById('search')?.addEventListener('input', filterCards);
 document.getElementById('folderFilter')?.addEventListener('change', filterCards);
 
-async function testConnection(id) {
+// ── Delete confirm modal ──────────────────────────────────────────────────────
+function showDeleteConfirm(id, name, onConfirm) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm';
+    modal.innerHTML = `
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="p-2 bg-red-500/10 rounded-lg"><span class="material-symbols-outlined text-red-400">delete</span></div>
+                <div>
+                    <h3 class="font-bold text-slate-100">Delete Connection</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">This action cannot be undone</p>
+                </div>
+            </div>
+            <p class="text-sm text-slate-300 mb-6">Delete <span class="font-semibold text-white">${name}</span>?</p>
+            <div class="flex gap-3 justify-end">
+                <button id="cancelDel" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition-colors">Cancel</button>
+                <button id="confirmDel" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-semibold transition-colors">Delete</button>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('#cancelDel').onclick = () => modal.remove();
+    modal.querySelector('#confirmDel').onclick = () => { modal.remove(); onConfirm(); };
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+}
+
+// ── Single connection actions ─────────────────────────────────────────────────
+async function testConnection(id, btn) {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">sync</span>';
+    btn.disabled = true;
     const res = await apiFetch(`/api/connections/${id}/test`, { method: 'POST' });
     const data = await res.json();
-    alert(data.ok ? 'Connection successful!' : `Failed: ${data.error}`);
+    btn.innerHTML = orig;
+    btn.disabled = false;
+    toast(data.ok ? 'Connection successful!' : `Failed: ${data.error}`, data.ok ? 'success' : 'error');
 }
+
 async function deleteConnection(id, name) {
-    if (!confirm(`Delete "${name}"?`)) return;
-    await apiFetch(`/api/connections/${id}`, { method: 'DELETE' });
-    location.reload();
+    showDeleteConfirm(id, name, async () => {
+        const res = await apiFetch(`/api/connections/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            const card = document.querySelector(`.connection-card[data-id="${id}"]`);
+            if (card) { card.style.transition = 'opacity 0.2s'; card.style.opacity = '0'; setTimeout(() => card.remove(), 200); }
+            toast(`Deleted "${name}"`, 'success');
+            updateCount();
+        } else {
+            toast('Failed to delete connection', 'error');
+        }
+    });
 }
-// Handle screenshot load errors — show fallback
+
+function updateCount() {
+    const cnt = document.querySelectorAll('.connection-card:not([style*="display: none"])').length;
+    const badge = document.querySelector('.connection-count-badge');
+    if (badge) badge.textContent = document.querySelectorAll('.connection-card').length;
+}
+
+// ── Screenshot error fallback ─────────────────────────────────────────────────
 document.querySelectorAll('.screenshot-img').forEach(img => {
+    if (img.complete && img.naturalWidth === 0) {
+        img.classList.add('hidden');
+        const fb = img.parentElement.querySelector('.screenshot-fallback');
+        if (fb) { fb.classList.remove('hidden'); fb.classList.add('flex'); }
+    }
     img.addEventListener('error', () => {
         img.classList.add('hidden');
-        const fallback = img.parentElement.querySelector('.screenshot-fallback');
-        if (fallback) fallback.classList.remove('hidden');
-        fallback.classList.add('flex');
+        const fb = img.parentElement.querySelector('.screenshot-fallback');
+        if (fb) { fb.classList.remove('hidden'); fb.classList.add('flex'); }
     });
 });
 
+// ── Status refresh ────────────────────────────────────────────────────────────
 document.getElementById('refreshStatusBtn')?.addEventListener('click', async (e) => {
     const btn = e.currentTarget;
+    const orig = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">sync</span> Checking...';
     const res = await apiFetch('/api/connections/status/refresh', { method: 'POST' });
-    const data = await res.json();
-    alert(`Online: ${data.online}, Offline: ${data.offline}`);
-    location.reload();
+    if (res.ok) {
+        const data = await res.json();
+        toast(`Status: ${data.online} online, ${data.offline} offline`, 'info');
+        setTimeout(() => location.reload(), 800);
+    } else {
+        const data = await res.json().catch(() => ({}));
+        toast(data.error || 'Status check failed', 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
 });
 
+// ── Screenshot refresh ────────────────────────────────────────────────────────
 document.getElementById('refreshScreenshotsBtn')?.addEventListener('click', async (e) => {
     const btn = e.currentTarget;
+    const orig = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">sync</span> Capturing...';
     const res = await apiFetch('/api/connections/screenshots/refresh', { method: 'POST' });
-    const data = await res.json();
-    alert(`Captured: ${data.captured}, Failed: ${data.failed}`);
-    location.reload();
+    if (res.ok) {
+        const data = await res.json();
+        toast(`Previews: ${data.captured} captured, ${data.failed} failed`, data.failed > 0 ? 'info' : 'success');
+        setTimeout(() => location.reload(), 800);
+    } else {
+        const data = await res.json().catch(() => ({}));
+        toast(data.error || 'Screenshot refresh failed', 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
 });
 
+// ── Card click delegation ─────────────────────────────────────────────────────
 document.getElementById('connectionGrid')?.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
     const id = parseInt(btn.dataset.id);
-    if (btn.dataset.action === 'test') testConnection(id);
+    if (btn.dataset.action === 'test') testConnection(id, btn);
     if (btn.dataset.action === 'delete') deleteConnection(id, btn.dataset.name);
+});
+
+// ── Bulk select ───────────────────────────────────────────────────────────────
+let bulkMode = false;
+const selected = new Set();
+
+function toggleBulkMode() {
+    bulkMode = !bulkMode;
+    selected.clear();
+    document.querySelectorAll('.connection-card').forEach(card => {
+        const cb = card.querySelector('.bulk-checkbox');
+        if (bulkMode) {
+            card.classList.add('cursor-pointer');
+            if (cb) cb.classList.remove('hidden');
+        } else {
+            card.classList.remove('cursor-pointer', 'ring-2', 'ring-blue-500');
+            if (cb) { cb.classList.add('hidden'); cb.checked = false; }
+        }
+    });
+    document.getElementById('bulkBar').classList.toggle('hidden', !bulkMode);
+    document.getElementById('bulkToggleBtn').textContent = bulkMode ? 'Cancel' : 'Select';
+    updateBulkCount();
+}
+
+function toggleSelect(id, card) {
+    if (!bulkMode) return;
+    if (selected.has(id)) {
+        selected.delete(id);
+        card.classList.remove('ring-2', 'ring-blue-500');
+        card.querySelector('.bulk-checkbox').checked = false;
+    } else {
+        selected.add(id);
+        card.classList.add('ring-2', 'ring-blue-500');
+        card.querySelector('.bulk-checkbox').checked = true;
+    }
+    updateBulkCount();
+}
+
+function updateBulkCount() {
+    const label = document.getElementById('bulkCountLabel');
+    if (label) label.textContent = selected.size === 0 ? 'None selected' : `${selected.size} selected`;
+    const delBtn = document.getElementById('bulkDeleteBtn');
+    if (delBtn) delBtn.disabled = selected.size === 0;
+}
+
+function selectAll() {
+    document.querySelectorAll('.connection-card').forEach(card => {
+        const id = parseInt(card.dataset.id);
+        if (card.style.display !== 'none') {
+            selected.add(id);
+            card.classList.add('ring-2', 'ring-blue-500');
+            const cb = card.querySelector('.bulk-checkbox');
+            if (cb) cb.checked = true;
+        }
+    });
+    updateBulkCount();
+}
+
+async function bulkDelete() {
+    if (selected.size === 0) return;
+    showDeleteConfirm(null, `${selected.size} connection(s)`, async () => {
+        let deleted = 0;
+        for (const id of selected) {
+            const res = await apiFetch(`/api/connections/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                const card = document.querySelector(`.connection-card[data-id="${id}"]`);
+                if (card) card.remove();
+                deleted++;
+            }
+        }
+        selected.clear();
+        toast(`Deleted ${deleted} connection(s)`, 'success');
+        toggleBulkMode();
+        updateCount();
+    });
+}
+
+document.getElementById('bulkToggleBtn')?.addEventListener('click', toggleBulkMode);
+document.getElementById('bulkSelectAllBtn')?.addEventListener('click', selectAll);
+document.getElementById('bulkDeleteBtn')?.addEventListener('click', bulkDelete);
+
+document.getElementById('connectionGrid')?.addEventListener('click', (e) => {
+    if (!bulkMode) return;
+    const card = e.target.closest('.connection-card');
+    if (!card || e.target.closest('[data-action]') || e.target.tagName === 'A') return;
+    toggleSelect(parseInt(card.dataset.id), card);
+});
+
+// ── Import ────────────────────────────────────────────────────────────────────
+let importFmt = 'json';
+function setFmt(fmt) {
+    importFmt = fmt;
+    document.querySelectorAll('.fmt-btn').forEach(b => {
+        b.classList.toggle('active-fmt', b.id === 'fmt' + fmt.charAt(0).toUpperCase() + fmt.slice(1));
+    });
+    document.getElementById('importText').placeholder = fmt === 'csv'
+        ? 'name,host,port,protocol,username,notes\nMyServer,192.168.1.1,22,ssh,root,'
+        : '[{"name":"MyServer","host":"192.168.1.1","port":22,"protocol":"ssh","username":"root"}]';
+    document.getElementById('csvHint').classList.toggle('hidden', fmt !== 'csv');
+}
+// Style active format button
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.fmt-btn').forEach(b => {
+        b.classList.add('bg-slate-800', 'border-slate-700', 'text-slate-300');
+    });
+});
+document.querySelectorAll('.fmt-btn').forEach(b => {
+    b.classList.add('bg-slate-800', 'border-slate-700', 'text-slate-300');
+    b.addEventListener('click', () => {
+        document.querySelectorAll('.fmt-btn').forEach(x => {
+            x.classList.toggle('bg-blue-600', x === b);
+            x.classList.toggle('border-blue-500', x === b);
+            x.classList.toggle('text-white', x === b);
+            x.classList.toggle('bg-slate-800', x !== b);
+            x.classList.toggle('border-slate-700', x !== b);
+            x.classList.toggle('text-slate-300', x !== b);
+        });
+    });
+});
+// Init first button as active
+document.getElementById('fmtJson')?.classList.replace('bg-slate-800','bg-blue-600');
+document.getElementById('fmtJson')?.classList.replace('border-slate-700','border-blue-500');
+document.getElementById('fmtJson')?.classList.replace('text-slate-300','text-white');
+
+async function doImport() {
+    const text = document.getElementById('importText').value.trim();
+    if (!text) { toast('Paste content first', 'error'); return; }
+    const btn = document.getElementById('importBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">sync</span> Importing...';
+    const res = await apiFetch(`/api/import/connections?format=${importFmt}`, {
+        method: 'POST',
+        body: JSON.stringify({ content: text }),
+    });
+    const data = await res.json();
+    btn.disabled = false;
+    btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">upload</span> Import';
+    const resultEl = document.getElementById('importResult');
+    resultEl.classList.remove('hidden');
+    if (res.ok) {
+        resultEl.className = 'mb-4 p-3 rounded-lg text-sm bg-green-500/10 border border-green-500/20 text-green-400';
+        resultEl.textContent = `Imported ${data.imported} connection(s). ${data.skipped ? data.skipped + ' skipped.' : ''}`;
+        toast(`Imported ${data.imported} connections`, 'success');
+        setTimeout(() => { document.getElementById('importModal').classList.add('hidden'); location.reload(); }, 1200);
+    } else {
+        resultEl.className = 'mb-4 p-3 rounded-lg text-sm bg-red-500/10 border border-red-500/20 text-red-400';
+        resultEl.textContent = data.error || 'Import failed';
+    }
+}
+
+// Allow drag-and-drop file into textarea
+document.getElementById('importText')?.addEventListener('dragover', e => e.preventDefault());
+document.getElementById('importText')?.addEventListener('drop', async e => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) {
+        const text = await file.text();
+        document.getElementById('importText').value = text;
+        if (file.name.endsWith('.csv')) setFmt('csv');
+        else setFmt('json');
+    }
 });
 </script>
 {% endblock %}

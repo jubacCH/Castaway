@@ -29,7 +29,18 @@
 {% endblock %}
 
 {% block content %}
-<div id="terminal-container" class="bg-black"></div>
+<!-- Mobile notice — hidden on md+ screens -->
+<div class="md:hidden flex flex-col items-center justify-center h-[calc(100vh-4rem)] gap-4 px-6 text-center">
+    <div class="p-4 bg-slate-900/60 rounded-2xl border border-slate-800">
+        <span class="material-symbols-outlined text-slate-500 text-4xl">terminal</span>
+    </div>
+    <h3 class="text-lg font-semibold text-slate-300 font-headline">Terminal not available on mobile</h3>
+    <p class="text-sm text-slate-500 max-w-xs">SSH terminals require a keyboard and sufficient screen space. Please open Castaway on a desktop or laptop.</p>
+    <a href="/connections" class="mt-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition-colors">
+        Back to Connections
+    </a>
+</div>
+<div id="terminal-container" class="hidden md:block bg-black"></div>
 {% endblock %}
 
 {% block scripts %}
@@ -37,6 +48,8 @@
 <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js" nonce="{{ request.state.csp_nonce }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.min.js" nonce="{{ request.state.csp_nonce }}"></script>
 <script nonce="{{ request.state.csp_nonce }}">
+// Skip terminal init on mobile (container is hidden)
+if (window.innerWidth < 768) { /* mobile — do nothing */ } else {
 const connId = {{ connection.id }};
 let ws;
 
@@ -92,5 +105,6 @@ document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.shiftKey && e.key === 'V') { navigator.clipboard.readText().then(t => { if (t && ws.readyState === WebSocket.OPEN) ws.send(t); }); e.preventDefault(); }
     if (e.ctrlKey && e.shiftKey && e.key === 'D') { disconnect(); e.preventDefault(); }
 });
+} // end mobile guard
 </script>
 {% endblock %}

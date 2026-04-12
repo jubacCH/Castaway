@@ -22,6 +22,7 @@ class ApiKey(Base):
     role = Column(String(16), default="readonly")  # readonly | editor | admin
     created_at = Column(DateTime, default=datetime.utcnow)
     last_used_at = Column(DateTime, nullable=True)
+    expires_at = Column(DateTime, nullable=True)  # None = never expires
 
 
 def generate_api_key() -> tuple[str, str]:

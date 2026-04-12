@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
-from sqlalchemy import func, select
+from sqlalchemy import func, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.base import get_db
@@ -60,24 +60,61 @@ async def connections_page(request: Request, db: AsyncSession = Depends(get_db))
         select(Tag).where(Tag.user_id == user.id).order_by(Tag.name)
     )).scalars().all()
 
-    # Attach tags + session stats to connections
+    # Attach tags + session stats to connections — batched to avoid N+1 queries
     from models.session_log import SessionLog
+    conn_ids = [c.id for c in connections]
     conn_list = []
-    for conn in connections:
-        tag_rows = (await db.execute(
-            select(Tag).join(connection_tags).where(connection_tags.c.connection_id == conn.id)
+
+    if conn_ids:
+        # Batch load all tags for all connections in one query
+        tag_rows_all = (await db.execute(
+            select(connection_tags.c.connection_id, Tag)
+            .join(Tag, connection_tags.c.tag_id == Tag.id)
+            .where(connection_tags.c.connection_id.in_(conn_ids))
+        )).all()
+        tags_by_conn: dict[int, list] = {cid: [] for cid in conn_ids}
+        for row in tag_rows_all:
+            tags_by_conn[row.connection_id].append(row[1])
+
+        # Batch load session counts per connection in one query
+        count_rows = (await db.execute(
+            select(SessionLog.connection_id, func.count().label("cnt"))
+            .where(SessionLog.connection_id.in_(conn_ids))
+            .group_by(SessionLog.connection_id)
+        )).all()
+        counts_by_conn: dict[int, int] = {row.connection_id: row.cnt for row in count_rows}
+
+        # Batch load latest session per connection using a subquery
+        subq = (
+            select(
+                SessionLog.connection_id,
+                func.max(SessionLog.started_at).label("max_started"),
+            )
+            .where(SessionLog.connection_id.in_(conn_ids))
+            .group_by(SessionLog.connection_id)
+            .subquery()
+        )
+        last_sessions_rows = (await db.execute(
+            select(SessionLog).join(
+                subq,
+                and_(
+                    SessionLog.connection_id == subq.c.connection_id,
+                    SessionLog.started_at == subq.c.max_started,
+                ),
+            )
         )).scalars().all()
-        session_count = (await db.execute(
-            select(func.count()).select_from(SessionLog).where(SessionLog.connection_id == conn.id)
-        )).scalar() or 0
-        last_session = (await db.execute(
-            select(SessionLog).where(SessionLog.connection_id == conn.id)
-            .order_by(SessionLog.started_at.desc()).limit(1)
-        )).scalar_one_or_none()
+        last_by_conn: dict[int, object] = {s.connection_id: s for s in last_sessions_rows}
+    else:
+        tags_by_conn = {}
+        counts_by_conn = {}
+        last_by_conn = {}
+
+    for conn in connections:
         conn_list.append({
-            "conn": conn, "tags": tag_rows,
-            "session_count": session_count,
-            "last_session": last_session,
+            "conn": conn,
+            "tags": tags_by_conn.get(conn.id, []),
+            "session_count": counts_by_conn.get(conn.id, 0),
+            "last_session": last_by_conn.get(conn.id),
         })
 
     # Load proxy_domain for subdomain links
