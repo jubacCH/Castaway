@@ -2,54 +2,97 @@
 {% block title %}Login — Castaway{% endblock %}
 
 {% block fullpage %}
-<div class="min-h-screen flex items-center justify-center bg-slate-950 relative overflow-hidden">
-    <!-- Decorative background grid -->
-    <div class="absolute inset-0 opacity-[0.03]" style="background-image: repeating-linear-gradient(0deg, #3b82f6 0px, transparent 1px, transparent 60px), repeating-linear-gradient(90deg, #3b82f6 0px, transparent 1px, transparent 60px);"></div>
-
-    <div class="w-full max-w-sm relative z-10">
-        <div class="text-center mb-8">
-            <div class="inline-flex p-3 bg-blue-500/10 rounded-xl mb-4">
-                <span class="material-symbols-outlined text-blue-500 text-4xl" style="font-variation-settings: 'FILL' 1;">terminal</span>
-            </div>
-            <h1 class="text-3xl font-bold text-white font-headline">Castaway</h1>
-            <p class="text-sm text-slate-500 mt-1 font-label">SSH Session Manager</p>
-        </div>
-        <div class="bg-slate-900/60 backdrop-blur-sm rounded-xl border border-slate-800 p-6">
-            <h2 id="loginTitle" class="text-lg font-semibold text-white mb-5 font-headline">Sign in</h2>
-            <div id="error" class="hidden mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm"></div>
-            <!-- Step 1: Credentials -->
-            <form id="loginForm" class="space-y-4">
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1.5 font-label uppercase tracking-wider">Username</label>
-                    <input type="text" name="username" required autofocus
-                        class="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all">
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1.5 font-label uppercase tracking-wider">Password</label>
-                    <input type="password" name="password" required
-                        class="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all">
-                </div>
-                <button type="submit"
-                    class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-colors active:scale-[0.98] flex items-center justify-center gap-2">
-                    <span class="material-symbols-outlined text-[18px]">login</span> Sign in
-                </button>
-            </form>
-            <!-- Step 2: MFA code -->
-            <form id="mfaForm" class="space-y-4 hidden">
-                <p class="text-sm text-slate-400">Enter the 6-digit code from your authenticator app</p>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1.5 font-label uppercase tracking-wider">MFA Code</label>
-                    <input type="text" name="mfa_code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"
-                        class="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-center text-2xl font-mono tracking-[0.3em] placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                </div>
-                <button type="submit"
-                    class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-colors active:scale-[0.98] flex items-center justify-center gap-2">
-                    <span class="material-symbols-outlined text-[18px]">verified_user</span> Verify
-                </button>
-                <button type="button" id="cancelMfa" class="w-full text-xs text-slate-500 hover:text-slate-300 transition-colors">Cancel</button>
-            </form>
-        </div>
+<div class="min-h-screen flex items-center justify-center bg-slate-950 relative overflow-hidden p-4">
+    <!-- Decorative background glows -->
+    <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+        <div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full"></div>
+        <div class="absolute -bottom-[10%] -right-[10%] w-[30%] h-[30%] bg-blue-500/5 blur-[100px] rounded-full"></div>
     </div>
+
+    <main class="w-full max-w-md relative z-10">
+        <!-- Brand -->
+        <div class="mb-8 text-center">
+            <div class="flex items-center justify-center gap-2 mb-2">
+                <span class="material-symbols-outlined text-blue-500 text-3xl" style="font-variation-settings: 'FILL' 1;">anchor</span>
+                <span class="text-3xl font-mono font-black tracking-tight text-slate-100">Castaway</span>
+            </div>
+            <p class="text-slate-400 font-mono text-sm tracking-wider">Secure SSH Session Management</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 p-8 rounded-xl shadow-2xl">
+            <div class="mb-6">
+                <h1 id="loginTitle" class="text-2xl font-headline font-bold text-slate-100">Welcome back</h1>
+                <p class="text-slate-400 text-sm mt-1">Sign in to your terminal environment</p>
+            </div>
+
+            <div id="error" class="hidden mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-mono text-xs"></div>
+
+            <!-- Step 1: Credentials -->
+            <form id="loginForm" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-mono uppercase tracking-widest text-slate-400 mb-2">Username</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span class="material-symbols-outlined text-slate-500 text-sm">person</span>
+                        </div>
+                        <input type="text" name="username" required autofocus placeholder="admin"
+                            class="block w-full pl-10 bg-slate-950 border border-slate-700 text-slate-100 text-sm rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors placeholder:text-slate-600 font-mono py-2.5">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-mono uppercase tracking-widest text-slate-400 mb-2">Password</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span class="material-symbols-outlined text-slate-500 text-sm">lock</span>
+                        </div>
+                        <input type="password" name="password" required placeholder="••••••••"
+                            class="block w-full pl-10 bg-slate-950 border border-slate-700 text-slate-100 text-sm rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors placeholder:text-slate-600 font-mono py-2.5">
+                    </div>
+                </div>
+                <button type="submit"
+                    class="w-full flex justify-center items-center gap-2 py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-bold transition-all active:scale-[0.98] font-mono uppercase tracking-wider">
+                    Sign in
+                    <span class="material-symbols-outlined text-sm">login</span>
+                </button>
+            </form>
+
+            <!-- Step 2: MFA -->
+            <form id="mfaForm" class="space-y-5 hidden">
+                <p class="text-sm text-slate-400 font-mono">Enter the 6-digit code from your authenticator app</p>
+                <div>
+                    <label class="block text-xs font-mono uppercase tracking-widest text-slate-400 mb-2">MFA Code</label>
+                    <input type="text" name="mfa_code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"
+                        class="w-full px-3 py-3 bg-slate-950 border border-slate-700 rounded text-slate-100 text-center text-2xl font-mono tracking-[0.3em] placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <button type="submit"
+                    class="w-full flex justify-center items-center gap-2 py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-bold transition-all active:scale-[0.98] font-mono uppercase tracking-wider">
+                    <span class="material-symbols-outlined text-sm">verified_user</span> Verify
+                </button>
+                <button type="button" id="cancelMfa" class="w-full text-xs text-slate-500 hover:text-slate-300 font-mono transition-colors">← Back to login</button>
+            </form>
+
+            <!-- Register link -->
+            <div class="mt-6 pt-5 border-t border-slate-700/50 text-center">
+                <p class="text-sm text-slate-400 font-mono">
+                    New to the deck?
+                    <a href="/register" class="font-semibold text-blue-400 hover:text-blue-300 transition-colors ml-1">Register</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-6 flex flex-wrap justify-center gap-6 opacity-30 hover:opacity-70 transition-all duration-500">
+            <div class="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-tighter text-slate-400">
+                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                v0.1.0
+            </div>
+            <div class="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-tighter text-slate-400">
+                <span class="material-symbols-outlined text-[12px]">shield</span>
+                AES-256 encrypted
+            </div>
+        </div>
+    </main>
 </div>
 {% endblock %}
 
