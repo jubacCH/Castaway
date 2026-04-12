@@ -84,49 +84,62 @@
     <!-- Connection Cards Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="connectionGrid">
         {% for item in connections %}
-        <div class="connection-card group glass-panel relative rounded-[2rem] p-6 border border-white/20 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-0.5 overflow-hidden"
+        <div class="connection-card group glass-panel relative rounded-[2rem] border border-white/20 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-0.5 overflow-hidden"
              data-name="{{ item.conn.name|lower }}" data-host="{{ item.conn.host|lower }}"
              data-folder="{{ item.conn.folder_id or '' }}" data-id="{{ item.conn.id }}">
 
             <!-- Bulk select checkbox -->
-            <div class="bulk-checkbox-wrap hidden absolute top-4 left-4 z-10">
+            <div class="bulk-checkbox-wrap hidden absolute top-3 left-3 z-20">
                 <input type="checkbox" class="bulk-checkbox w-4 h-4 cursor-pointer rounded" style="accent-color:#00647c;">
             </div>
 
-            <!-- Status badge -->
-            {% if item.conn.is_online is not none %}
-            <div class="absolute top-4 right-4">
-                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
-                    {% if item.conn.is_online %}bg-green-500/10 text-green-600{% else %}bg-outline/10 text-outline{% endif %}">
-                    <span class="w-1.5 h-1.5 rounded-full {% if item.conn.is_online %}bg-green-500 animate-pulse{% else %}bg-outline/60{% endif %}"></span>
-                    {{ 'Online' if item.conn.is_online else 'Offline' }}
+            <!-- Screenshot preview header -->
+            <div class="relative overflow-hidden bg-surface-container-high" style="height:112px">
+                {% if item.conn.web_url %}
+                <img src="/api/connections/{{ item.conn.id }}/screenshot.jpg"
+                     class="conn-screenshot w-full h-full object-cover object-top"
+                     alt="{{ item.conn.name }}">
+                <div class="conn-screenshot-fallback w-full h-full absolute inset-0 hidden items-center justify-center">
+                    <span class="material-symbols-outlined text-outline/25 text-5xl">language</span>
+                </div>
+                {% else %}
+                <div class="w-full h-full flex items-center justify-center">
+                    <span class="material-symbols-outlined text-outline/25 text-5xl">{% if item.conn.protocol == 'rdp' %}desktop_windows{% else %}terminal{% endif %}</span>
+                </div>
+                {% endif %}
+                <!-- Bottom fade -->
+                <div class="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white/80 to-transparent pointer-events-none"></div>
+                <!-- Status badge -->
+                {% if item.conn.is_online is not none %}
+                <div class="absolute top-2.5 right-2.5">
+                    <div class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md border
+                        {% if item.conn.is_online %}bg-green-500/20 text-green-700 border-green-500/20{% else %}bg-white/70 text-outline border-outline/10{% endif %}">
+                        <span class="w-1.5 h-1.5 rounded-full {% if item.conn.is_online %}bg-green-500 animate-pulse{% else %}bg-outline/50{% endif %}"></span>
+                        {{ 'Online' if item.conn.is_online else 'Offline' }}
+                    </div>
+                </div>
+                {% endif %}
+                <!-- Action buttons (hover) -->
+                <div class="absolute top-2.5 left-2.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <a href="/connections/{{ item.conn.id }}/edit" class="p-1.5 bg-white/85 backdrop-blur-sm text-on-surface-variant hover:text-primary transition-colors rounded-full shadow-sm" title="Edit">
+                        <span class="material-symbols-outlined text-[15px]">edit</span>
+                    </a>
+                    <button data-action="test" data-id="{{ item.conn.id }}" class="p-1.5 bg-white/85 backdrop-blur-sm text-on-surface-variant hover:text-primary transition-colors rounded-full shadow-sm" title="Test">
+                        <span class="material-symbols-outlined text-[15px]">bolt</span>
+                    </button>
+                    <button data-action="delete" data-id="{{ item.conn.id }}" data-name="{{ item.conn.name }}" class="p-1.5 bg-white/85 backdrop-blur-sm text-on-surface-variant hover:text-error transition-colors rounded-full shadow-sm" title="Delete">
+                        <span class="material-symbols-outlined text-[15px]">delete</span>
+                    </button>
                 </div>
             </div>
-            {% endif %}
 
-            <!-- Action buttons (hover) -->
-            <div class="absolute top-12 right-4 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                <a href="/connections/{{ item.conn.id }}/edit" class="p-1.5 text-on-surface-variant hover:text-primary transition-colors rounded-full hover:bg-surface-container" title="Edit">
-                    <span class="material-symbols-outlined text-[16px]">edit</span>
-                </a>
-                <button data-action="test" data-id="{{ item.conn.id }}" class="p-1.5 text-on-surface-variant hover:text-primary transition-colors rounded-full hover:bg-surface-container" title="Test">
-                    <span class="material-symbols-outlined text-[16px]">bolt</span>
-                </button>
-                <button data-action="delete" data-id="{{ item.conn.id }}" data-name="{{ item.conn.name }}" class="p-1.5 text-on-surface-variant hover:text-error transition-colors rounded-full hover:bg-surface-container" title="Delete">
-                    <span class="material-symbols-outlined text-[16px]">delete</span>
-                </button>
-            </div>
-
-            <!-- Connection header -->
-            <div class="mb-5 mt-2 pr-16">
-                <div class="w-12 h-12 rounded-2xl bg-surface-container-high flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <span class="material-symbols-outlined text-primary">{% if item.conn.protocol == 'rdp' %}desktop_windows{% else %}terminal{% endif %}</span>
-                </div>
+            <!-- Card body -->
+            <div class="p-5">
+                <!-- Source + type badges -->
                 <div class="flex items-center gap-1.5 mb-1">
                     <span class="text-[10px] text-on-surface-variant/60 uppercase tracking-widest font-label">
                         {% if item.conn.source != 'manual' %}{{ item.conn.source }}{% else %}Manual{% endif %}
                     </span>
-                    <!-- Type badges -->
                     {% if item.conn.protocol == 'ssh' %}
                     <span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-primary/10 text-primary border border-primary/20 font-label">SSH</span>
                     {% elif item.conn.protocol == 'rdp' %}
@@ -136,52 +149,52 @@
                     <span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-tertiary/10 text-tertiary border border-tertiary/20 font-label">WEB</span>
                     {% endif %}
                 </div>
-                <h3 class="font-headline text-xl font-bold text-on-surface leading-tight">{{ item.conn.name }}</h3>
-                <p class="text-outline text-sm font-body mt-0.5">{{ item.conn.username or 'root' }}@{{ item.conn.host }}</p>
-            </div>
+                <h3 class="font-headline text-lg font-bold text-on-surface leading-tight">{{ item.conn.name }}</h3>
+                <p class="text-outline text-sm font-body mt-0.5 mb-3">{{ item.conn.username or 'root' }}@{{ item.conn.host }}</p>
 
-            <!-- Stats -->
-            <div class="space-y-2 mb-5 border-t border-outline-variant/10 pt-4">
-                <div class="flex justify-between font-mono text-[11px]">
-                    <span class="text-outline uppercase">Port</span>
-                    <span class="text-on-surface font-medium">{{ item.conn.port or 22 }}</span>
+                <!-- Stats -->
+                <div class="space-y-1.5 mb-4 border-t border-outline-variant/10 pt-3">
+                    <div class="flex justify-between font-mono text-[11px]">
+                        <span class="text-outline uppercase">Port</span>
+                        <span class="text-on-surface font-medium">{{ item.conn.port or 22 }}</span>
+                    </div>
+                    <div class="flex justify-between font-mono text-[11px]">
+                        <span class="text-outline uppercase">Last Session</span>
+                        <span class="text-on-surface">{% if item.last_session %}{{ item.last_session.started_at|localtime("%d.%m %H:%M") }}{% else %}—{% endif %}</span>
+                    </div>
                 </div>
-                <div class="flex justify-between font-mono text-[11px]">
-                    <span class="text-outline uppercase">Last Session</span>
-                    <span class="text-on-surface">{% if item.last_session %}{{ item.last_session.started_at|localtime("%d.%m %H:%M") }}{% else %}—{% endif %}</span>
+
+                <!-- Tags -->
+                {% if item.tags %}
+                <div class="flex flex-wrap gap-1.5 mb-4">
+                    {% for tag in item.tags %}
+                    <span class="px-2.5 py-0.5 text-[10px] font-medium rounded-lg font-label"
+                          style="background:{{ tag.color or '#00647c' }}15;color:{{ tag.color or '#00647c' }};">{{ tag.name }}</span>
+                    {% endfor %}
                 </div>
-            </div>
+                {% endif %}
 
-            <!-- Tags -->
-            {% if item.tags %}
-            <div class="flex flex-wrap gap-1.5 mb-4">
-                {% for tag in item.tags %}
-                <span class="px-2.5 py-0.5 text-[10px] font-medium rounded-lg font-label"
-                      style="background:{{ tag.color or '#00647c' }}15;color:{{ tag.color or '#00647c' }};">{{ tag.name }}</span>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- Connect buttons — beide anzeigen wenn SSH + Web verfügbar -->
-            <div class="flex gap-2">
-                {% if item.conn.protocol == 'ssh' %}
-                <a href="/terminal/{{ item.conn.id }}"
-                    class="{% if item.conn.web_url %}flex-1{% else %}w-full{% endif %} flex justify-center items-center gap-1.5 bg-gradient-to-r from-primary to-primary-container text-white font-label text-xs font-bold py-2.5 rounded-full shadow-md shadow-primary/15 active:scale-95 transition-all">
-                    <span class="material-symbols-outlined text-[14px]">terminal</span> SSH
-                </a>
-                {% endif %}
-                {% if item.conn.web_url %}
-                <a href="{% if item.conn.subdomain and proxy_domain %}https://{{ item.conn.subdomain }}.{{ proxy_domain }}/{% else %}/web/{{ item.conn.id }}/{% endif %}" target="_blank"
-                    class="{% if item.conn.protocol == 'ssh' %}flex-1 bg-surface-container border border-primary/20 text-primary hover:bg-primary/5{% else %}w-full bg-gradient-to-r from-primary to-primary-container text-white shadow-md shadow-primary/15{% endif %} flex justify-center items-center gap-1.5 font-label text-xs font-bold py-2.5 rounded-full active:scale-95 transition-all">
-                    <span class="material-symbols-outlined text-[14px]">open_in_new</span> Web
-                </a>
-                {% endif %}
-                {% if item.conn.protocol == 'rdp' %}
-                <a href="/api/connections/{{ item.conn.id }}/rdp-file"
-                    class="w-full flex justify-center items-center gap-1.5 bg-rdp text-white font-label text-xs font-bold py-2.5 rounded-full shadow-md active:scale-95 transition-all">
-                    <span class="material-symbols-outlined text-[14px]">download</span> Download RDP
-                </a>
-                {% endif %}
+                <!-- Connect buttons -->
+                <div class="flex gap-2">
+                    {% if item.conn.protocol == 'ssh' %}
+                    <a href="/terminal/{{ item.conn.id }}"
+                        class="{% if item.conn.web_url %}flex-1{% else %}w-full{% endif %} flex justify-center items-center gap-1.5 bg-gradient-to-r from-primary to-primary-container text-white font-label text-xs font-bold py-2.5 rounded-full shadow-md shadow-primary/15 active:scale-95 transition-all">
+                        <span class="material-symbols-outlined text-[14px]">terminal</span> SSH
+                    </a>
+                    {% endif %}
+                    {% if item.conn.web_url %}
+                    <a href="{% if item.conn.subdomain and proxy_domain %}https://{{ item.conn.subdomain }}.{{ proxy_domain }}/{% else %}/web/{{ item.conn.id }}/{% endif %}" target="_blank"
+                        class="{% if item.conn.protocol == 'ssh' %}flex-1 bg-surface-container border border-primary/20 text-primary hover:bg-primary/5{% else %}w-full bg-gradient-to-r from-primary to-primary-container text-white shadow-md shadow-primary/15{% endif %} flex justify-center items-center gap-1.5 font-label text-xs font-bold py-2.5 rounded-full active:scale-95 transition-all">
+                        <span class="material-symbols-outlined text-[14px]">open_in_new</span> Web
+                    </a>
+                    {% endif %}
+                    {% if item.conn.protocol == 'rdp' %}
+                    <a href="/api/connections/{{ item.conn.id }}/rdp-file"
+                        class="w-full flex justify-center items-center gap-1.5 bg-rdp text-white font-label text-xs font-bold py-2.5 rounded-full shadow-md active:scale-95 transition-all">
+                        <span class="material-symbols-outlined text-[14px]">download</span> Download RDP
+                    </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
         {% endfor %}
@@ -258,6 +271,15 @@
 
 {% block scripts %}
 <script nonce="{{ request.state.csp_nonce }}">
+// ── Screenshot fallback (CSP-konform, kein onerror inline) ───────────────────
+document.querySelectorAll('.conn-screenshot').forEach(img => {
+    img.addEventListener('error', function() {
+        this.style.display = 'none';
+        const fb = this.nextElementSibling;
+        if (fb) { fb.classList.remove('hidden'); fb.style.display = 'flex'; }
+    });
+});
+
 // ── Filtering ────────────────────────────────────────────────────────────────
 function filterCards() {
     const q = document.getElementById('search').value.toLowerCase();
