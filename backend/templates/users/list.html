@@ -2,56 +2,69 @@
 {% block title %}Users — Castaway{% endblock %}
 
 {% block topbar_left %}
-<span class="material-symbols-outlined text-blue-400 text-xl">group</span>
-<h1 class="text-white font-headline font-semibold text-base">Users</h1>
-<span class="text-xs text-slate-500 font-label">Manage user accounts</span>
+<span class="material-symbols-outlined text-primary text-xl">group</span>
+<h1 class="font-headline font-semibold text-on-surface text-base">Users</h1>
+<span class="text-xs text-outline font-label">Manage user accounts</span>
 {% endblock %}
 
 {% block topbar_right %}
-<button onclick="showAddForm()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-colors active:scale-95 flex items-center gap-1.5">
-    <span class="material-symbols-outlined text-sm">person_add</span> Add User
+<button onclick="showAddForm()"
+    class="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary to-primary-container text-white text-sm font-semibold shadow-md shadow-primary/20 hover:shadow-lg transition-all active:scale-[0.98]">
+    <span class="material-symbols-outlined text-[16px]">person_add</span>
+    <span class="hidden sm:inline">Add User</span>
 </button>
 {% endblock %}
 
 {% block content %}
-<div class="p-6 max-w-3xl space-y-6">
+<div class="p-6 pb-28 lg:pb-6 max-w-3xl space-y-5">
 
     <!-- Add/Edit Form (hidden by default) -->
-    <div id="userForm" class="hidden bg-slate-900/40 border border-slate-800 rounded-xl p-6">
-        <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider font-label mb-5" id="formTitle">Add User</h3>
-        <div id="formError" class="hidden mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm"></div>
-        <form id="uForm" class="space-y-5">
-            <input type="hidden" name="user_id" value="">
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1.5 font-label">Username</label>
-                    <input type="text" name="username" required
-                        class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+    <div id="userForm" class="hidden glass-panel rounded-[2rem] border border-white/20 shadow-xl overflow-hidden">
+        <div class="px-6 pt-6 pb-4 border-b border-outline-variant/15">
+            <div class="text-[10px] font-bold tracking-[0.2em] uppercase text-outline/60 font-label" id="formTitle">Add User</div>
+        </div>
+        <div class="px-6 py-5">
+            <div id="formError" class="hidden mb-4 p-3 rounded-2xl text-sm font-mono text-xs"
+                 style="background:rgba(186,26,26,0.08);border:1px solid rgba(186,26,26,0.15);color:#ba1a1a;"></div>
+            <form id="uForm" class="space-y-5">
+                <input type="hidden" name="user_id" value="">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold tracking-wide text-on-surface-variant/70 mb-1.5 font-label">Username</label>
+                        <input type="text" name="username" required
+                            class="w-full px-4 py-2.5 bg-surface-container-high border-none rounded-xl text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold tracking-wide text-on-surface-variant/70 mb-1.5 font-label">Password</label>
+                        <input type="password" name="password" minlength="8"
+                            class="w-full px-4 py-2.5 bg-surface-container-high border-none rounded-xl text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold tracking-wide text-on-surface-variant/70 mb-1.5 font-label">Email <span class="font-normal text-outline/50">(optional)</span></label>
+                        <input type="email" name="email"
+                            class="w-full px-4 py-2.5 bg-surface-container-high border-none rounded-xl text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold tracking-wide text-on-surface-variant/70 mb-1.5 font-label">Role</label>
+                        <select name="role"
+                            class="w-full px-4 py-2.5 bg-surface-container-high border-none rounded-xl text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1.5 font-label">Password</label>
-                    <input type="password" name="password" minlength="8"
-                        class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                <div class="flex gap-2">
+                    <button type="submit"
+                        class="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary to-primary-container text-white text-sm font-semibold shadow-md shadow-primary/20 hover:shadow-lg transition-all active:scale-[0.98]">
+                        <span class="material-symbols-outlined text-[16px]">save</span> Save
+                    </button>
+                    <button type="button" onclick="hideForm()"
+                        class="px-5 py-2.5 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface text-sm font-semibold transition-all">
+                        Cancel
+                    </button>
                 </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1.5 font-label">Email</label>
-                    <input type="email" name="email"
-                        class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1.5 font-label">Role</label>
-                    <select name="role"
-                        class="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
-                        <option value="user">User</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-            </div>
-            <div class="flex gap-2">
-                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-colors active:scale-95">Save</button>
-                <button type="button" onclick="hideForm()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition-colors">Cancel</button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 
     <!-- User List -->
@@ -68,34 +81,42 @@ async function loadUsers() {
 
     if (!data.users || data.users.length === 0) {
         el.innerHTML = `
-            <div class="bg-slate-900/40 border border-slate-800 rounded-xl p-10 flex flex-col items-center justify-center text-center">
-                <span class="material-symbols-outlined text-4xl text-slate-600 mb-3">person_off</span>
-                <p class="text-sm text-slate-500">No users found</p>
+            <div class="glass-panel rounded-[2rem] border border-white/20 shadow-xl p-12 flex flex-col items-center justify-center text-center">
+                <span class="material-symbols-outlined text-5xl text-outline/30 mb-3">person_off</span>
+                <p class="text-sm text-outline">No users found</p>
             </div>`;
         return;
     }
 
-    el.innerHTML = `<div class="bg-slate-900/40 border border-slate-800 rounded-xl overflow-hidden divide-y divide-slate-800/50">` +
-    data.users.map(u => `
-        <div class="flex items-center justify-between px-5 py-3.5 hover:bg-slate-800/30 transition-colors">
-            <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-sm font-semibold text-slate-300 font-label">
+    el.innerHTML = `<div class="glass-panel rounded-[2rem] border border-white/20 shadow-xl overflow-hidden">` +
+    data.users.map((u, i) => `
+        <div class="flex items-center justify-between px-5 py-4 hover:bg-surface-container/30 transition-colors ${i > 0 ? 'border-t border-outline-variant/10' : ''}">
+            <div class="flex items-center gap-3.5 min-w-0">
+                <div class="w-10 h-10 rounded-[0.75rem] bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white text-sm font-bold font-headline shadow-md shadow-primary/10 shrink-0">
                     ${u.username[0].toUpperCase()}
                 </div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-white text-sm">${u.username}</span>
-                        <span class="text-[10px] ${u.role === 'admin' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-slate-700/50 text-slate-400 border border-slate-700/30'} px-2 py-0.5 rounded">${u.role}</span>
-                        ${!u.is_active ? '<span class="text-[10px] bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded">disabled</span>' : ''}
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-semibold text-on-surface text-sm">${u.username}</span>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${u.role === 'admin'
+                            ? 'bg-tertiary-container/20 text-tertiary border border-tertiary-container/30'
+                            : 'bg-surface-container text-outline border border-outline-variant/30'}">${u.role}</span>
+                        ${!u.is_active ? '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-error/10 text-error border border-error/15">disabled</span>' : ''}
                     </div>
-                    <div class="text-xs text-slate-500 mt-0.5">${u.email || ''}</div>
+                    <div class="text-xs text-outline mt-0.5 truncate">${u.email || ''}</div>
                 </div>
             </div>
             <div class="flex gap-1.5 shrink-0">
-                <button data-action="toggle" data-id="${u.id}" data-active="${u.is_active}" class="px-2 py-1 text-xs ${u.is_active ? 'bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30' : 'bg-green-600/20 text-green-400 hover:bg-green-600/30'} rounded transition-colors">
+                <button data-action="toggle" data-id="${u.id}" data-active="${u.is_active}"
+                    class="px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${u.is_active
+                        ? 'bg-yellow-500/10 text-yellow-700 hover:bg-yellow-500/15'
+                        : 'bg-green-500/15 text-green-700 hover:bg-green-500/20'}">
                     ${u.is_active ? 'Disable' : 'Enable'}
                 </button>
-                <button data-action="delete" data-id="${u.id}" data-name="${u.username}" class="px-2 py-1 text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded transition-colors">Delete</button>
+                <button data-action="delete" data-id="${u.id}" data-name="${u.username}"
+                    class="px-3 py-1.5 rounded-full text-xs font-semibold bg-error/10 text-error hover:bg-error/15 transition-all">
+                    Delete
+                </button>
             </div>
         </div>
     `).join('') + `</div>`;
