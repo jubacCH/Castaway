@@ -2,8 +2,8 @@
 {% block title %}Config — Castaway{% endblock %}
 
 {% block topbar_left %}
-<span class="material-symbols-outlined text-secondary text-xl">settings</span>
-<h1 class="font-headline italic text-xl font-bold text-primary">Config</h1>
+<span class="material-symbols-outlined text-primary text-xl" style="font-variation-settings:'FILL' 1;">settings</span>
+<h1 class="font-headline text-xl font-bold text-on-surface">Config</h1>
 {% endblock %}
 
 {% block content %}
@@ -12,18 +12,17 @@
     <div id="settingsError" class="hidden"></div>
 
     <!-- Screenshot Settings -->
-    <div class="bg-surface-container-low border border-outline-variant overflow-hidden" style="border-top-right-radius:24px;border-bottom-left-radius:24px;">
-        <div class="px-5 py-3.5 border-b border-outline-variant bg-surface-container flex items-center gap-2">
-            <span class="material-symbols-outlined text-secondary text-[18px]">photo_camera</span>
-            <h3 class="text-xs font-bold text-on-surface uppercase tracking-widest font-mono">Screenshot Previews</h3>
-            <div class="flex-1 h-px bg-outline-variant ml-2"></div>
+    <div class="glass-panel rounded-[2rem] border border-white/20 shadow-xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-white/10 flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings:'FILL' 1;">photo_camera</span>
+            <h3 class="font-headline font-bold text-on-surface">Screenshot Previews</h3>
         </div>
-        <div class="p-5 space-y-4">
-            <p class="text-xs text-on-surface-variant font-mono">Capture web interface screenshots for connections with a Web URL</p>
+        <div class="p-6 space-y-4">
+            <p class="text-sm text-on-surface-variant font-body">Capture web interface screenshots for connections with a Web URL</p>
             <div>
-                <label class="block text-[10px] font-mono uppercase tracking-widest text-on-surface-variant mb-1.5">Refresh Interval</label>
+                <label class="block text-[10px] font-label font-semibold uppercase tracking-widest text-on-surface-variant/70 mb-2 ml-1">Refresh Interval</label>
                 <div class="flex items-center gap-3">
-                    <select id="screenshotInterval" class="w-52 px-3 py-2 bg-surface border border-outline-variant text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-secondary font-mono" style="border-radius:6px 2px 6px 2px;">
+                    <select id="screenshotInterval" class="w-52 px-4 py-2.5 bg-surface-container-high border-none rounded-xl text-on-surface text-sm focus:ring-2 focus:ring-primary/20 font-body">
                         <option value="0">Disabled</option>
                         <option value="30">Every 30 minutes</option>
                         <option value="60">Every hour</option>
@@ -32,11 +31,11 @@
                         <option value="720">Every 12 hours</option>
                         <option value="1440">Every 24 hours</option>
                     </select>
-                    <button id="saveScreenshotBtn" class="px-4 py-2 bg-primary text-on-primary text-xs font-mono uppercase tracking-widest transition-colors active:scale-95" style="border-radius:6px 2px 6px 2px;">Save</button>
+                    <button id="saveScreenshotBtn" class="px-5 py-2.5 bg-gradient-to-r from-primary to-primary-container text-white text-xs font-label font-bold uppercase tracking-widest rounded-full transition-all active:scale-95 shadow-lg shadow-primary/20">Save</button>
                 </div>
             </div>
-            <div class="flex items-center gap-3 pt-3 border-t border-outline-variant/50">
-                <button id="refreshNowBtn" class="px-3 py-1.5 bg-surface-container border border-outline-variant text-on-surface-variant text-xs font-mono transition-colors flex items-center gap-1.5" style="border-radius:6px 2px 6px 2px;">
+            <div class="flex items-center gap-3 pt-3 border-t border-white/10">
+                <button id="refreshNowBtn" class="px-4 py-2 bg-surface-container border border-outline-variant/30 text-on-surface-variant text-xs font-label rounded-full transition-colors hover:bg-surface-container-high flex items-center gap-1.5">
                     <span class="material-symbols-outlined text-[14px]">photo_camera</span> Refresh Now
                 </button>
                 <span id="refreshStatus" class="text-xs text-on-surface-variant font-mono"></span>
@@ -45,18 +44,17 @@
     </div>
 
     <!-- Status Check Settings -->
-    <div class="bg-surface-container-low border border-outline-variant overflow-hidden" style="border-top-right-radius:24px;border-bottom-left-radius:24px;">
-        <div class="px-5 py-3.5 border-b border-outline-variant bg-surface-container flex items-center gap-2">
-            <span class="material-symbols-outlined text-success text-[18px]">wifi_find</span>
-            <h3 class="text-xs font-bold text-on-surface uppercase tracking-widest font-mono">Connection Status</h3>
-            <div class="flex-1 h-px bg-outline-variant ml-2"></div>
+    <div class="glass-panel rounded-[2rem] border border-white/20 shadow-xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-white/10 flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary text-[20px]">wifi_find</span>
+            <h3 class="font-headline font-bold text-on-surface">Connection Status</h3>
         </div>
-        <div class="p-5 space-y-4">
-            <p class="text-xs text-on-surface-variant font-mono">Periodically check if SSH ports are reachable (TCP port check)</p>
+        <div class="p-6 space-y-4">
+            <p class="text-sm text-on-surface-variant font-body">Periodically check if SSH ports are reachable (TCP port check)</p>
             <div>
-                <label class="block text-[10px] font-mono uppercase tracking-widest text-on-surface-variant mb-1.5">Check Interval</label>
+                <label class="block text-[10px] font-label font-semibold uppercase tracking-widest text-on-surface-variant/70 mb-2 ml-1">Check Interval</label>
                 <div class="flex items-center gap-3">
-                    <select id="statusInterval" class="w-52 px-3 py-2 bg-surface border border-outline-variant text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-secondary font-mono" style="border-radius:6px 2px 6px 2px;">
+                    <select id="statusInterval" class="w-52 px-4 py-2.5 bg-surface-container-high border-none rounded-xl text-on-surface text-sm focus:ring-2 focus:ring-primary/20 font-body">
                         <option value="0">Disabled</option>
                         <option value="1">Every minute</option>
                         <option value="5">Every 5 minutes</option>
@@ -64,11 +62,11 @@
                         <option value="30">Every 30 minutes</option>
                         <option value="60">Every hour</option>
                     </select>
-                    <button id="saveStatusBtn" class="px-4 py-2 bg-primary text-on-primary text-xs font-mono uppercase tracking-widest transition-colors active:scale-95" style="border-radius:6px 2px 6px 2px;">Save</button>
+                    <button id="saveStatusBtn" class="px-5 py-2.5 bg-gradient-to-r from-primary to-primary-container text-white text-xs font-label font-bold uppercase tracking-widest rounded-full transition-all active:scale-95 shadow-lg shadow-primary/20">Save</button>
                 </div>
             </div>
-            <div class="flex items-center gap-3 pt-3 border-t border-outline-variant/50">
-                <button id="checkNowBtn" class="px-3 py-1.5 bg-surface-container border border-outline-variant text-on-surface-variant text-xs font-mono transition-colors flex items-center gap-1.5" style="border-radius:6px 2px 6px 2px;">
+            <div class="flex items-center gap-3 pt-3 border-t border-white/10">
+                <button id="checkNowBtn" class="px-4 py-2 bg-surface-container border border-outline-variant/30 text-on-surface-variant text-xs font-label rounded-full transition-colors hover:bg-surface-container-high flex items-center gap-1.5">
                     <span class="material-symbols-outlined text-[14px]">wifi_find</span> Check Now
                 </button>
                 <span id="checkStatus" class="text-xs text-on-surface-variant font-mono"></span>
@@ -77,126 +75,123 @@
     </div>
 
     <!-- Subdomain Proxy -->
-    <div class="bg-surface-container-low border border-outline-variant overflow-hidden" style="border-top-right-radius:24px;border-bottom-left-radius:24px;">
-        <div class="px-5 py-3.5 border-b border-outline-variant bg-surface-container flex items-center gap-2">
-            <span class="material-symbols-outlined text-secondary text-[18px]">lan</span>
-            <h3 class="text-xs font-bold text-on-surface uppercase tracking-widest font-mono">Subdomain Proxy</h3>
-            <div class="flex-1 h-px bg-outline-variant ml-2"></div>
+    <div class="glass-panel rounded-[2rem] border border-white/20 shadow-xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-white/10 flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary text-[20px]">lan</span>
+            <h3 class="font-headline font-bold text-on-surface">Subdomain Proxy</h3>
         </div>
-        <div class="p-5 space-y-4">
-            <p class="text-xs text-on-surface-variant font-mono">Route external traffic to internal web UIs via per-connection subdomains</p>
+        <div class="p-6 space-y-4">
+            <p class="text-sm text-on-surface-variant font-body">Route external traffic to internal web UIs via per-connection subdomains</p>
             <div>
-                <label class="block text-[10px] font-mono uppercase tracking-widest text-on-surface-variant mb-1.5">Proxy Domain</label>
+                <label class="block text-[10px] font-label font-semibold uppercase tracking-widest text-on-surface-variant/70 mb-2 ml-1">Proxy Domain</label>
                 <div class="flex items-center gap-3">
                     <input id="proxyDomain" type="text" placeholder="apps.b8n.ch"
-                        class="flex-1 px-3 py-2 bg-surface border border-outline-variant text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-secondary font-mono" style="border-radius:6px 2px 6px 2px;">
-                    <button id="saveProxyBtn" class="px-4 py-2 bg-primary text-on-primary text-xs font-mono uppercase tracking-widest transition-colors active:scale-95" style="border-radius:6px 2px 6px 2px;">Save</button>
+                        class="flex-1 px-4 py-2.5 bg-surface-container-high border-none rounded-xl text-on-surface text-sm focus:ring-2 focus:ring-primary/20 font-mono">
+                    <button id="saveProxyBtn" class="px-5 py-2.5 bg-gradient-to-r from-primary to-primary-container text-white text-xs font-label font-bold uppercase tracking-widest rounded-full transition-all active:scale-95 shadow-lg shadow-primary/20">Save</button>
                 </div>
-                <p class="text-[10px] text-on-surface-variant/60 mt-1 font-mono">Subdomains on this domain route to connections by slug</p>
+                <p class="text-[10px] text-on-surface-variant/50 mt-1.5 ml-1 font-mono">Subdomains on this domain route to connections by slug</p>
             </div>
             <div>
-                <label class="block text-[10px] font-mono uppercase tracking-widest text-on-surface-variant mb-1.5">Login URL</label>
+                <label class="block text-[10px] font-label font-semibold uppercase tracking-widest text-on-surface-variant/70 mb-2 ml-1">Login URL</label>
                 <div class="flex items-center gap-3">
                     <input id="loginUrl" type="url" placeholder="https://castaway.b8n.ch/login"
-                        class="flex-1 px-3 py-2 bg-surface border border-outline-variant text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-secondary font-mono" style="border-radius:6px 2px 6px 2px;">
-                    <button id="saveLoginBtn" class="px-4 py-2 bg-primary text-on-primary text-xs font-mono uppercase tracking-widest transition-colors active:scale-95" style="border-radius:6px 2px 6px 2px;">Save</button>
+                        class="flex-1 px-4 py-2.5 bg-surface-container-high border-none rounded-xl text-on-surface text-sm focus:ring-2 focus:ring-primary/20 font-mono">
+                    <button id="saveLoginBtn" class="px-5 py-2.5 bg-gradient-to-r from-primary to-primary-container text-white text-xs font-label font-bold uppercase tracking-widest rounded-full transition-all active:scale-95 shadow-lg shadow-primary/20">Save</button>
                 </div>
-                <p class="text-[10px] text-on-surface-variant/60 mt-1 font-mono">Where unauth subdomain visitors are redirected</p>
+                <p class="text-[10px] text-on-surface-variant/50 mt-1.5 ml-1 font-mono">Where unauth subdomain visitors are redirected</p>
             </div>
         </div>
     </div>
 
     <!-- Integrations -->
     <div>
-        <div class="flex items-center gap-3 mb-3">
-            <h2 class="font-headline italic text-xl font-bold text-primary">Integrations</h2>
-            <div class="flex-1 h-px bg-outline-variant"></div>
+        <div class="flex items-center gap-3 mb-4">
+            <h2 class="font-headline text-xl font-bold text-on-surface">Integrations</h2>
+            <div class="flex-1 h-px bg-outline-variant/30"></div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="bg-surface-container-low border border-outline-variant p-4 flex items-start justify-between hover:border-secondary transition-colors" style="border-top-right-radius:20px;border-bottom-left-radius:20px;">
+            <div class="glass-panel rounded-[2rem] border border-white/20 p-5 flex items-start justify-between hover:shadow-xl transition-shadow">
                 <div class="flex gap-3">
-                    <div class="w-10 h-10 bg-surface-container flex items-center justify-center flex-shrink-0" style="border-radius:6px 2px 6px 2px;border:1px solid #c5c6d0;">
-                        <span class="material-symbols-outlined text-success">lan</span>
+                    <div class="w-10 h-10 bg-surface-container-high rounded-2xl flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-primary text-[20px]">lan</span>
                     </div>
                     <div>
-                        <p class="font-headline italic font-bold text-primary">phpIPAM</p>
-                        <p class="text-[10px] font-mono text-on-surface-variant uppercase mb-2">IP Management</p>
+                        <p class="font-headline font-bold text-on-surface">phpIPAM</p>
+                        <p class="text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">IP Management</p>
                     </div>
                 </div>
-                <a href="/settings/phpipam" class="text-[10px] font-mono border border-outline-variant px-3 py-1.5 text-on-surface-variant hover:bg-surface-container transition-colors uppercase tracking-widest" style="border-radius:6px 2px 6px 2px;">Configure</a>
+                <a href="/settings/phpipam" class="text-[10px] font-label font-bold border border-outline-variant/40 px-3 py-1.5 text-on-surface-variant hover:bg-surface-container transition-colors uppercase tracking-widest rounded-full">Configure</a>
             </div>
-            <div class="bg-surface-container-low border border-outline-variant p-4 flex items-start justify-between hover:border-secondary transition-colors" style="border-top-right-radius:20px;border-bottom-left-radius:20px;">
+            <div class="glass-panel rounded-[2rem] border border-white/20 p-5 flex items-start justify-between hover:shadow-xl transition-shadow">
                 <div class="flex gap-3">
-                    <div class="w-10 h-10 bg-surface-container flex items-center justify-center flex-shrink-0" style="border-radius:6px 2px 6px 2px;border:1px solid #c5c6d0;">
-                        <span class="material-symbols-outlined text-on-surface-variant">key</span>
+                    <div class="w-10 h-10 bg-surface-container-high rounded-2xl flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-secondary text-[20px]">key</span>
                     </div>
                     <div>
-                        <p class="font-headline italic font-bold text-primary">Vaultwarden</p>
-                        <p class="text-[10px] font-mono text-on-surface-variant uppercase mb-2">Secrets Management</p>
+                        <p class="font-headline font-bold text-on-surface">Vaultwarden</p>
+                        <p class="text-[10px] font-label text-on-surface-variant uppercase tracking-widest mb-2">Secrets Management</p>
                     </div>
                 </div>
-                <a href="/settings/vaultwarden" class="text-[10px] font-mono border border-outline-variant px-3 py-1.5 text-on-surface-variant hover:bg-surface-container transition-colors uppercase tracking-widest" style="border-radius:6px 2px 6px 2px;">Configure</a>
+                <a href="/settings/vaultwarden" class="text-[10px] font-label font-bold border border-outline-variant/40 px-3 py-1.5 text-on-surface-variant hover:bg-surface-container transition-colors uppercase tracking-widest rounded-full">Configure</a>
             </div>
         </div>
     </div>
 
     <!-- API Keys -->
-    <div class="bg-surface-container-low border border-outline-variant overflow-hidden" style="border-top-right-radius:24px;border-bottom-left-radius:24px;">
-        <div class="px-5 py-3.5 border-b border-outline-variant bg-surface-container flex items-center gap-2">
-            <span class="material-symbols-outlined text-secondary text-[18px]">vpn_key</span>
-            <h3 class="text-xs font-bold text-on-surface uppercase tracking-widest font-mono">API Keys</h3>
-            <div class="flex-1 h-px bg-outline-variant ml-2"></div>
+    <div class="glass-panel rounded-[2rem] border border-white/20 shadow-xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-white/10 flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings:'FILL' 1;">vpn_key</span>
+            <h3 class="font-headline font-bold text-on-surface">API Keys</h3>
         </div>
-        <div class="p-5">
-            <p class="text-xs text-on-surface-variant font-mono mb-4">Manage API keys for CLI and external integrations</p>
-            <div id="newKeyResult" class="hidden mb-4 p-3 text-sm" style="background:rgba(0,105,113,0.1);border:1px solid rgba(0,105,113,0.2);border-radius:6px 2px 6px 2px;">
-                <p class="text-secondary font-semibold mb-1 text-xs font-mono">Key created — copy it now, it won't be shown again:</p>
-                <code id="newKeyValue" class="block p-2 bg-surface rounded text-secondary font-mono text-xs select-all break-all mt-2"></code>
+        <div class="p-6">
+            <p class="text-sm text-on-surface-variant font-body mb-4">Manage API keys for CLI and external integrations</p>
+            <div id="newKeyResult" class="hidden mb-4 p-4 rounded-2xl" style="background:rgba(0,100,124,0.08);border:1px solid rgba(0,100,124,0.15);">
+                <p class="text-primary font-label font-semibold mb-1 text-xs uppercase tracking-widest">Key created — copy it now, it won't be shown again:</p>
+                <code id="newKeyValue" class="block p-3 bg-surface-container rounded-xl text-primary font-mono text-xs select-all break-all mt-2"></code>
             </div>
             <div class="flex gap-2 mb-4">
                 <input type="text" id="keyName" placeholder="Key name (e.g. CLI)"
-                    class="flex-1 px-3 py-2 bg-surface border border-outline-variant text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-secondary font-mono" style="border-radius:6px 2px 6px 2px;">
-                <select id="keyRole" class="px-3 py-2 bg-surface border border-outline-variant text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-secondary font-mono" style="border-radius:6px 2px 6px 2px;">
+                    class="flex-1 px-4 py-2.5 bg-surface-container-high border-none rounded-xl text-on-surface text-sm focus:ring-2 focus:ring-primary/20 font-body">
+                <select id="keyRole" class="px-4 py-2.5 bg-surface-container-high border-none rounded-xl text-on-surface text-sm focus:ring-2 focus:ring-primary/20 font-body">
                     <option value="readonly">Readonly</option>
                     <option value="editor">Editor</option>
                     <option value="admin">Admin</option>
                 </select>
-                <button id="createKeyBtn" class="px-4 py-2 bg-primary text-on-primary text-xs font-mono uppercase tracking-widest transition-colors active:scale-95" style="border-radius:6px 2px 6px 2px;">Create</button>
+                <button id="createKeyBtn" class="px-5 py-2.5 bg-gradient-to-r from-primary to-primary-container text-white text-xs font-label font-bold uppercase tracking-widest rounded-full transition-all active:scale-95 shadow-lg shadow-primary/20">Create</button>
             </div>
             <div id="keysList"></div>
         </div>
     </div>
 
     <!-- Danger Zone -->
-    <div class="bg-surface-container-low overflow-hidden" style="border:1px solid rgba(234,80,13,0.2);border-top-right-radius:24px;border-bottom-left-radius:24px;">
-        <div class="px-5 py-3.5 flex items-center gap-2" style="border-bottom:1px solid rgba(234,80,13,0.2);background:rgba(234,80,13,0.05);">
-            <span class="material-symbols-outlined text-[18px]" style="color:#ea500d;">warning</span>
-            <h3 class="text-xs font-bold uppercase tracking-widest font-mono" style="color:#ea500d;">Danger Zone</h3>
-            <div class="flex-1 h-px ml-2" style="background:rgba(234,80,13,0.2);"></div>
+    <div class="rounded-[2rem] overflow-hidden" style="background:rgba(186,26,26,0.04);border:1px solid rgba(186,26,26,0.15);">
+        <div class="px-6 py-4 flex items-center gap-3" style="border-bottom:1px solid rgba(186,26,26,0.12);background:rgba(186,26,26,0.06);">
+            <span class="material-symbols-outlined text-[20px]" style="color:#ba1a1a;font-variation-settings:'FILL' 1;">warning</span>
+            <h3 class="font-headline font-bold" style="color:#ba1a1a;">Danger Zone</h3>
         </div>
-        <div class="p-5">
-            <p class="text-xs text-on-surface-variant font-mono mb-4">Destructive actions that cannot be undone</p>
-            <button id="deleteAllBtn" class="px-4 py-2 text-xs font-mono transition-colors flex items-center gap-1.5" style="background:rgba(234,80,13,0.1);color:#ea500d;border:1px solid rgba(234,80,13,0.2);border-radius:6px 2px 6px 2px;">
+        <div class="p-6">
+            <p class="text-sm text-on-surface-variant font-body mb-4">Destructive actions that cannot be undone</p>
+            <button id="deleteAllBtn" class="px-5 py-2.5 text-xs font-label font-bold uppercase tracking-widest rounded-full transition-all active:scale-95 flex items-center gap-2" style="background:rgba(186,26,26,0.1);color:#ba1a1a;border:1px solid rgba(186,26,26,0.2);">
                 <span class="material-symbols-outlined text-[14px]">delete_sweep</span> Delete All Connections
             </button>
         </div>
     </div>
 
     <!-- About -->
-    <div class="bg-surface-container-low border border-outline-variant overflow-hidden" style="border-top-right-radius:24px;border-bottom-left-radius:24px;">
-        <div class="px-5 py-3.5 border-b border-outline-variant bg-surface-container flex items-center gap-2">
-            <span class="material-symbols-outlined text-on-surface-variant text-[18px]">info</span>
-            <h3 class="text-xs font-bold text-on-surface uppercase tracking-widest font-mono">About</h3>
+    <div class="glass-panel rounded-[2rem] border border-white/20 shadow-xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-white/10 flex items-center gap-3">
+            <span class="material-symbols-outlined text-on-surface-variant text-[20px]">info</span>
+            <h3 class="font-headline font-bold text-on-surface">About</h3>
         </div>
-        <div class="p-5 space-y-2.5 text-sm font-mono">
+        <div class="p-6 space-y-3 font-mono text-sm">
             <div class="flex justify-between items-center">
                 <span class="text-on-surface-variant text-xs">Version</span>
-                <span class="text-on-surface text-xs">0.1.0</span>
+                <span class="text-on-surface text-xs font-bold">0.1.0</span>
             </div>
-            <div class="h-px bg-outline-variant"></div>
+            <div class="h-px bg-outline-variant/30"></div>
             <div class="flex justify-between items-center">
                 <span class="text-on-surface-variant text-xs">Export Connections</span>
-                <a href="/api/export/connections" class="text-secondary hover:text-on-secondary-container text-xs flex items-center gap-1 transition-colors">
+                <a href="/api/export/connections" class="text-primary hover:text-primary-container text-xs flex items-center gap-1 transition-colors font-label font-bold">
                     <span class="material-symbols-outlined text-[13px]">download</span> JSON
                 </a>
             </div>
@@ -221,8 +216,8 @@ async function loadSettings() {
 function showSaved(text) {
     const el = document.getElementById('settingsError');
     el.textContent = text;
-    el.className = 'mb-4 p-3 text-sm font-mono';
-    el.style.cssText = 'background:rgba(0,105,113,0.1);border:1px solid rgba(0,105,113,0.2);color:#006971;border-radius:6px 2px 6px 2px;margin-bottom:1rem;padding:0.75rem;font-size:0.875rem;';
+    el.className = 'mb-4 p-4 rounded-2xl text-sm font-label';
+    el.style.cssText = 'background:rgba(0,100,124,0.08);border:1px solid rgba(0,100,124,0.15);color:#00647c;';
     setTimeout(() => { el.className = 'hidden'; el.style = ''; }, 2500);
 }
 
@@ -274,15 +269,15 @@ async function loadKeys() {
         el.innerHTML = '<p class="text-xs text-on-surface-variant font-mono">No API keys</p>';
         return;
     }
-    el.innerHTML = `<div class="divide-y divide-outline-variant/30">` + data.keys.map(k => `
-        <div class="flex items-center justify-between py-2.5">
+    el.innerHTML = `<div class="divide-y divide-outline-variant/20">` + data.keys.map(k => `
+        <div class="flex items-center justify-between py-3">
             <div>
-                <span class="text-sm text-on-surface font-medium">${k.name}</span>
-                <span class="text-[10px] bg-surface-container text-on-surface-variant px-2 py-0.5 ml-2 font-mono" style="border-radius:3px;">${k.role}</span>
+                <span class="text-sm text-on-surface font-medium font-body">${k.name}</span>
+                <span class="text-[10px] bg-surface-container text-on-surface-variant px-2 py-0.5 ml-2 font-label rounded-full">${k.role}</span>
                 <span class="text-xs font-mono text-on-surface-variant/50 ml-2">${k.prefix}...</span>
                 ${k.last_used_at ? `<span class="text-[10px] text-on-surface-variant/40 ml-2">Last: ${k.last_used_at}</span>` : ''}
             </div>
-            <button data-action="delete-key" data-id="${k.id}" class="px-2 py-1 text-xs font-mono transition-colors" style="background:rgba(234,80,13,0.1);color:#ea500d;border-radius:3px;">Delete</button>
+            <button data-action="delete-key" data-id="${k.id}" class="px-3 py-1.5 text-xs font-label font-bold uppercase tracking-widest rounded-full transition-colors" style="background:rgba(186,26,26,0.1);color:#ba1a1a;border:1px solid rgba(186,26,26,0.15);">Delete</button>
         </div>
     `).join('') + `</div>`;
 }

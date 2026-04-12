@@ -2,13 +2,14 @@
 {% block title %}Fleet — Castaway{% endblock %}
 
 {% block topbar_left %}
-<div class="relative w-full max-w-sm">
+<div class="relative w-full max-w-xs">
     <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-sm">search</span>
-    <input id="search" class="w-full bg-surface-container-high border-none rounded-tr-2xl rounded-bl-2xl pl-12 pr-4 py-2.5 text-on-surface text-xs font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-secondary transition-all" placeholder="QUERY VESSEL IDENTIFIER..." type="text"/>
-    <div class="absolute left-0 bottom-0 w-1 h-full bg-secondary rounded-full"></div>
+    <input id="search" type="text"
+        class="w-full bg-surface-container-high border-none rounded-full pl-12 pr-4 py-2 text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-body placeholder:text-outline/50"
+        placeholder="Search connections..."/>
 </div>
 {% if folders %}
-<select id="folderFilter" class="bg-surface-container border border-outline-variant rounded-tr-xl rounded-bl-xl px-3 py-2.5 text-on-surface text-xs font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-secondary">
+<select id="folderFilter" class="bg-surface-container border border-outline-variant/30 rounded-full px-4 py-2 text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 font-body">
     <option value="">All Folders</option>
     {% for f in folders %}
     <option value="{{ f.id }}">{{ f.name }}</option>
@@ -18,218 +19,215 @@
 {% endblock %}
 
 {% block topbar_right %}
-<span class="font-headline italic text-2xl font-bold text-primary tracking-tight">Fleet</span>
 {% if connections %}
-<button id="refreshStatusBtn" class="bg-success/10 hover:bg-success/20 text-success px-3 py-2 text-xs font-mono uppercase tracking-widest transition-colors flex items-center gap-1.5" style="border-radius:8px 2px 8px 2px;">
-    <span class="material-symbols-outlined text-[15px]">wifi_find</span>
-    Check Status
+<button id="refreshStatusBtn" class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-all" title="Check Status">
+    <span class="material-symbols-outlined text-[20px]">wifi_find</span>
 </button>
-<button id="refreshScreenshotsBtn" class="bg-rdp/10 hover:bg-rdp/20 text-rdp px-3 py-2 text-xs font-mono uppercase tracking-widest transition-colors flex items-center gap-1.5" style="border-radius:8px 2px 8px 2px;">
-    <span class="material-symbols-outlined text-[15px]">photo_camera</span>
-    Previews
+<button id="refreshScreenshotsBtn" class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-all" title="Refresh Previews">
+    <span class="material-symbols-outlined text-[20px]">photo_camera</span>
 </button>
-<button id="bulkToggleBtn" class="stencil-border px-3 py-2 text-xs font-mono uppercase tracking-widest text-on-surface-variant hover:bg-surface-container transition-all flex items-center gap-1.5">
-    <span class="material-symbols-outlined text-[15px]">checklist</span>
-    Select
+<button id="bulkToggleBtn" class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-all" title="Select">
+    <span class="material-symbols-outlined text-[20px]">checklist</span>
 </button>
 {% endif %}
-<button onclick="document.getElementById('importModal').classList.remove('hidden')" class="stencil-border px-3 py-2 text-xs font-mono uppercase tracking-widest text-on-surface-variant hover:bg-surface-container transition-all flex items-center gap-1.5">
-    <span class="material-symbols-outlined text-[15px]">upload</span>
-    Import
+<button onclick="document.getElementById('importModal').classList.remove('hidden')" class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-all" title="Import">
+    <span class="material-symbols-outlined text-[20px]">upload</span>
 </button>
-<a href="/connections/new" class="bg-primary text-on-primary px-4 py-2 font-mono text-xs uppercase tracking-widest active:scale-95 transition-transform flex items-center gap-2" style="border-top-right-radius:12px;border-bottom-left-radius:12px;">
-    <span class="material-symbols-outlined text-[16px]">add</span>
+<a href="/connections/new" class="flex items-center gap-2 bg-gradient-to-br from-primary to-primary-container text-white font-headline font-bold text-sm px-4 py-2 rounded-full shadow-lg shadow-primary/25 active:scale-95 transition-all">
+    <span class="material-symbols-outlined text-[18px]">add</span>
     New
 </a>
 {% endblock %}
 
 {% block content %}
-<div class="p-6 xl:p-8">
+<div class="px-6 xl:px-8 py-8">
 
     <!-- Bulk Action Bar -->
-    <div id="bulkBar" class="hidden mb-4 p-3 bg-surface-container border border-outline-variant flex items-center gap-3" style="border-top-right-radius:16px;border-bottom-left-radius:16px;">
-        <span id="bulkCountLabel" class="text-sm text-on-surface-variant font-mono flex-1">None selected</span>
-        <button id="bulkSelectAllBtn" class="text-xs text-secondary hover:text-on-secondary-container font-mono uppercase tracking-widest">Select All</button>
-        <button id="bulkDeleteBtn" disabled class="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-mono uppercase tracking-widest transition-colors" style="border-radius:6px 2px 6px 2px;">
+    <div id="bulkBar" class="hidden mb-6 p-4 glass-panel border border-white/20 rounded-2xl flex items-center gap-3">
+        <span id="bulkCountLabel" class="text-sm text-on-surface-variant font-body flex-1">None selected</span>
+        <button id="bulkSelectAllBtn" class="text-xs text-primary hover:text-primary-container font-body font-medium">Select All</button>
+        <button id="bulkDeleteBtn" disabled class="flex items-center gap-1.5 px-4 py-1.5 bg-error/10 hover:bg-error/20 text-error text-xs font-medium rounded-full disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             <span class="material-symbols-outlined text-[13px]">delete</span> Delete Selected
         </button>
     </div>
 
     {% if connections %}
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="md:col-span-2 glass-panel p-6 rounded-[2rem] border border-white/20 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold tracking-widest uppercase text-outline font-label mb-1">Network Health</p>
+                <h3 class="font-headline text-3xl font-bold text-primary">Stable</h3>
+            </div>
+            <div class="h-14 w-28 bg-primary/5 rounded-2xl flex items-end p-2 gap-1 overflow-hidden">
+                {% for h in [50, 66, 75, 50, 66, 100] %}
+                <div class="flex-1 bg-primary rounded-full" style="height:{{ h }}%"></div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="glass-panel p-6 rounded-[2rem] border border-white/20 shadow-sm">
+            <p class="text-xs font-bold tracking-widest uppercase text-outline font-label mb-1">Total Nodes</p>
+            <h3 class="font-headline text-3xl font-bold text-on-surface connection-count-badge">{{ connections|length }}</h3>
+        </div>
+        <div class="glass-panel p-6 rounded-[2rem] border border-white/20 shadow-sm">
+            <p class="text-xs font-bold tracking-widest uppercase text-outline font-label mb-1">Online</p>
+            <h3 class="font-headline text-3xl font-bold text-on-surface">{{ connections | selectattr('conn.is_online', 'equalto', true) | list | length }}</h3>
+        </div>
+    </div>
+
     <!-- Connection Cards Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="connectionGrid">
         {% for item in connections %}
-        <div class="connection-card group relative bg-surface-container-low p-5 transition-all duration-300 hover:-translate-y-1"
-             style="border-top-right-radius:32px;border-bottom-left-radius:32px;box-shadow:0 4px 20px -10px rgba(0,0,0,0.06);"
-             data-name="{{ item.conn.name|lower }}" data-host="{{ item.conn.host|lower }}" data-folder="{{ item.conn.folder_id or '' }}" data-id="{{ item.conn.id }}">
-            <!-- Stencil border overlay -->
-            <div class="absolute inset-0 stencil-border opacity-30 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+        <div class="connection-card group glass-panel relative rounded-[2rem] p-6 border border-white/20 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-0.5 overflow-hidden"
+             data-name="{{ item.conn.name|lower }}" data-host="{{ item.conn.host|lower }}"
+             data-folder="{{ item.conn.folder_id or '' }}" data-id="{{ item.conn.id }}">
+
             <!-- Bulk select checkbox -->
             <div class="bulk-checkbox-wrap hidden absolute top-4 left-4 z-10">
-                <input type="checkbox" class="bulk-checkbox w-4 h-4 cursor-pointer" style="accent-color:#006971;">
+                <input type="checkbox" class="bulk-checkbox w-4 h-4 cursor-pointer rounded" style="accent-color:#00647c;">
             </div>
-            <!-- Action buttons -->
-            <div class="absolute top-4 right-4 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                <a href="/connections/{{ item.conn.id }}/edit" class="p-1.5 text-on-surface-variant hover:text-on-surface transition-colors" title="Edit">
-                    <span class="material-symbols-outlined text-[14px]">edit</span>
+
+            <!-- Status badge -->
+            {% if item.conn.is_online is not none %}
+            <div class="absolute top-4 right-4">
+                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
+                    {% if item.conn.is_online %}bg-green-500/10 text-green-600{% else %}bg-outline/10 text-outline{% endif %}">
+                    <span class="w-1.5 h-1.5 rounded-full {% if item.conn.is_online %}bg-green-500 animate-pulse{% else %}bg-outline/60{% endif %}"></span>
+                    {{ 'Online' if item.conn.is_online else 'Offline' }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Action buttons (hover) -->
+            <div class="absolute top-12 right-4 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <a href="/connections/{{ item.conn.id }}/edit" class="p-1.5 text-on-surface-variant hover:text-primary transition-colors rounded-full hover:bg-surface-container" title="Edit">
+                    <span class="material-symbols-outlined text-[16px]">edit</span>
                 </a>
-                <button data-action="test" data-id="{{ item.conn.id }}" class="p-1.5 text-on-surface-variant hover:text-secondary transition-colors" title="Test">
-                    <span class="material-symbols-outlined text-[14px]">bolt</span>
+                <button data-action="test" data-id="{{ item.conn.id }}" class="p-1.5 text-on-surface-variant hover:text-primary transition-colors rounded-full hover:bg-surface-container" title="Test">
+                    <span class="material-symbols-outlined text-[16px]">bolt</span>
                 </button>
-                <button data-action="delete" data-id="{{ item.conn.id }}" data-name="{{ item.conn.name }}" class="p-1.5 text-on-surface-variant hover:text-red-500 transition-colors" title="Delete">
-                    <span class="material-symbols-outlined text-[14px]">delete</span>
+                <button data-action="delete" data-id="{{ item.conn.id }}" data-name="{{ item.conn.name }}" class="p-1.5 text-on-surface-variant hover:text-error transition-colors rounded-full hover:bg-surface-container" title="Delete">
+                    <span class="material-symbols-outlined text-[16px]">delete</span>
                 </button>
             </div>
+
             <!-- Connection header -->
-            <div class="flex justify-between items-start mb-5 pr-20">
-                <div class="flex flex-col">
-                    <span class="font-mono text-[9px] text-secondary tracking-tighter uppercase">
-                        {% if item.conn.source != 'manual' %}{{ item.conn.source }}{% else %}Manual{% endif %}
-                    </span>
-                    <h3 class="font-headline italic text-xl font-bold text-primary mt-0.5 leading-tight">{{ item.conn.name }}</h3>
+            <div class="mb-5 mt-2 pr-16">
+                <div class="w-12 h-12 rounded-2xl bg-surface-container-high flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-outlined text-primary">{% if item.conn.protocol == 'rdp' %}desktop_windows{% else %}terminal{% endif %}</span>
                 </div>
-                <!-- Status indicator -->
-                {% if item.conn.is_online is not none %}
-                <div class="w-2.5 h-2.5 flex-shrink-0 mt-1
-                    {% if item.conn.is_online %}bg-secondary shadow-[0_0_8px_rgba(0,105,113,0.6)]
-                    {% else %}bg-on-primary-container shadow-[0_0_8px_rgba(234,80,13,0.5)]{% endif %}">
-                </div>
-                {% endif %}
+                <span class="text-[10px] text-on-surface-variant/60 uppercase tracking-widest font-label">
+                    {% if item.conn.source != 'manual' %}{{ item.conn.source }}{% else %}Manual{% endif %}
+                </span>
+                <h3 class="font-headline text-xl font-bold text-on-surface mt-0.5 leading-tight">{{ item.conn.name }}</h3>
+                <p class="text-outline text-sm font-body mt-0.5">{{ item.conn.username or 'root' }}@{{ item.conn.host }}</p>
             </div>
+
             <!-- Stats -->
-            <div class="space-y-2.5 mb-5">
-                <div class="flex justify-between font-mono text-[10px] uppercase">
-                    <span class="text-outline">Host</span>
-                    <span class="text-primary">{{ item.conn.username or 'root' }}@{{ item.conn.host }}</span>
+            <div class="space-y-2 mb-5 border-t border-outline-variant/10 pt-4">
+                <div class="flex justify-between font-mono text-[11px]">
+                    <span class="text-outline uppercase">Port</span>
+                    <span class="text-on-surface font-medium">{{ item.conn.port or 22 }}</span>
                 </div>
-                <div class="flex justify-between font-mono text-[10px] uppercase">
-                    <span class="text-outline">Port</span>
-                    <span class="text-primary">{{ item.conn.port or 22 }}</span>
-                </div>
-                <div class="flex justify-between font-mono text-[10px] uppercase">
-                    <span class="text-outline">Last Session</span>
-                    <span class="text-primary">{% if item.last_session %}{{ item.last_session.started_at|localtime("%d.%m %H:%M") }}{% else %}—{% endif %}</span>
+                <div class="flex justify-between font-mono text-[11px]">
+                    <span class="text-outline uppercase">Last Session</span>
+                    <span class="text-on-surface">{% if item.last_session %}{{ item.last_session.started_at|localtime("%d.%m %H:%M") }}{% else %}—{% endif %}</span>
                 </div>
             </div>
+
             <!-- Tags -->
-            {% if item.tags or item.conn.source != 'manual' %}
+            {% if item.tags %}
             <div class="flex flex-wrap gap-1.5 mb-4">
                 {% for tag in item.tags %}
-                <span class="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider font-mono" style="border:1px dashed {{ tag.color or '#006971' }}40;color:{{ tag.color or '#006971' }};border-radius:0 8px 0 8px;">{{ tag.name }}</span>
+                <span class="px-2.5 py-0.5 text-[10px] font-medium rounded-lg font-label"
+                      style="background:{{ tag.color or '#00647c' }}15;color:{{ tag.color or '#00647c' }};">{{ tag.name }}</span>
                 {% endfor %}
             </div>
             {% endif %}
+
             <!-- Connect button -->
             {% if item.conn.web_url %}
             <a href="{% if item.conn.subdomain and proxy_domain %}https://{{ item.conn.subdomain }}.{{ proxy_domain }}/{% else %}/web/{{ item.conn.id }}/{% endif %}" target="_blank"
-                class="w-full flex justify-center items-center gap-1.5 bg-primary text-on-primary font-mono text-[10px] uppercase tracking-widest py-2 transition-all active:scale-95" style="border-top-right-radius:10px;border-bottom-left-radius:10px;">
-                <span class="material-symbols-outlined text-[12px]">open_in_new</span> Open Web
+                class="w-full flex justify-center items-center gap-1.5 bg-gradient-to-r from-primary to-primary-container text-white font-label text-xs font-bold py-2.5 rounded-full shadow-md active:scale-95 transition-all">
+                <span class="material-symbols-outlined text-[14px]">open_in_new</span> Open Web
             </a>
             {% elif item.conn.protocol == 'ssh' %}
             <a href="/terminal/{{ item.conn.id }}"
-                class="w-full flex justify-center items-center gap-1.5 bg-primary text-on-primary font-mono text-[10px] uppercase tracking-widest py-2 transition-all active:scale-95 hover:bg-secondary" style="border-top-right-radius:10px;border-bottom-left-radius:10px;">
-                Re-Establish
+                class="w-full flex justify-center items-center gap-1.5 bg-gradient-to-r from-primary to-primary-container text-white font-label text-xs font-bold py-2.5 rounded-full shadow-md active:scale-95 transition-all">
+                <span class="material-symbols-outlined text-[14px]">terminal</span> Connect
             </a>
             {% elif item.conn.protocol == 'rdp' %}
             <a href="/api/connections/{{ item.conn.id }}/rdp-file"
-                class="w-full flex justify-center items-center gap-1.5 bg-rdp text-white font-mono text-[10px] uppercase tracking-widest py-2 transition-all active:scale-95" style="border-top-right-radius:10px;border-bottom-left-radius:10px;">
-                Download RDP
+                class="w-full flex justify-center items-center gap-1.5 bg-tertiary text-white font-label text-xs font-bold py-2.5 rounded-full shadow-md active:scale-95 transition-all">
+                <span class="material-symbols-outlined text-[14px]">download</span> Download RDP
             </a>
             {% endif %}
         </div>
         {% endfor %}
 
         <!-- Add New card -->
-        <div class="group relative flex flex-col items-center justify-center border-2 border-dashed border-outline-variant p-6 transition-all duration-300 hover:bg-surface-container cursor-pointer"
-             style="border-top-right-radius:32px;border-bottom-left-radius:32px;"
-             onclick="window.location='/connections/new'">
-            <div class="w-14 h-14 bg-surface-container-highest rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <span class="material-symbols-outlined text-2xl text-secondary">add</span>
+        <button class="group relative rounded-[2rem] border-2 border-dashed border-outline-variant/40 hover:border-primary/40 transition-all flex flex-col items-center justify-center p-8 bg-surface-container-low/30 hover:bg-white/30 active:scale-95 min-h-[200px]"
+                onclick="window.location='/connections/new'">
+            <div class="w-14 h-14 rounded-full bg-surface-container-highest flex items-center justify-center mb-4 group-hover:bg-gradient-to-br group-hover:from-primary group-hover:to-primary-container group-hover:text-white group-hover:shadow-lg transition-all">
+                <span class="material-symbols-outlined text-3xl text-on-surface-variant group-hover:text-white transition-colors">add</span>
             </div>
-            <h4 class="font-headline italic text-lg font-bold text-primary">New Connection</h4>
-            <p class="font-mono text-[9px] text-outline uppercase tracking-widest mt-1">Initialize Protocol</p>
-        </div>
-    </div>
-
-    <!-- Stats footer -->
-    <div class="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-primary p-4" style="border-top-right-radius:16px;border-bottom-left-radius:16px;">
-            <span class="font-mono text-[9px] text-surface-variant uppercase tracking-widest">Total Nodes</span>
-            <div class="flex items-end gap-2 mt-1">
-                <span class="font-headline italic text-2xl text-on-primary font-black">{{ connections|length }}</span>
-                <span class="font-mono text-[9px] text-secondary-container mb-1">VESSELS</span>
-            </div>
-        </div>
-        <div class="bg-surface-container p-4 border-l-4 border-secondary" style="border-top-right-radius:16px;border-bottom-left-radius:16px;">
-            <span class="font-mono text-[9px] text-outline uppercase tracking-widest">Online</span>
-            <div class="flex items-end gap-2 mt-1">
-                <span class="font-headline italic text-2xl text-secondary font-black">{{ connections | selectattr('conn.is_online', 'equalto', true) | list | length }}</span>
-                <span class="font-mono text-[9px] text-outline mb-1">ACTIVE</span>
-            </div>
-        </div>
-        <div class="bg-surface-container p-4" style="border-top-right-radius:16px;border-bottom-left-radius:16px;">
-            <span class="font-mono text-[9px] text-outline uppercase tracking-widest">SSH Daemon</span>
-            <div class="flex items-end gap-2 mt-1">
-                <div class="w-2 h-2 rounded-full bg-success animate-pulse mt-1"></div>
-                <span class="font-mono text-[9px] text-success uppercase tracking-widest mb-0.5">Online</span>
-            </div>
-        </div>
-        <div class="bg-surface-container-high p-4 flex items-center justify-center" style="border-top-right-radius:16px;border-bottom-left-radius:16px;">
-            <span class="font-mono text-[10px] uppercase tracking-widest text-primary italic connection-count-badge">{{ connections|length }} CONNECTIONS</span>
-        </div>
+            <span class="font-headline font-bold text-on-surface-variant group-hover:text-primary transition-colors">Add New Connection</span>
+            <span class="text-xs text-outline mt-1 font-label">Deploy a new node</span>
+        </button>
     </div>
 
     {% else %}
     <!-- Empty State -->
-    <div class="flex flex-col items-center justify-center py-24">
-        <div class="w-20 h-20 bg-surface-container border-2 border-dashed border-outline-variant flex items-center justify-center mb-6" style="border-top-right-radius:24px;border-bottom-left-radius:24px;">
-            <span class="material-symbols-outlined text-outline text-4xl">sailing</span>
+    <div class="flex flex-col items-center justify-center py-32">
+        <div class="w-24 h-24 glass-panel border border-white/20 rounded-[2rem] flex items-center justify-center mb-6">
+            <span class="material-symbols-outlined text-outline/50 text-5xl">waves</span>
         </div>
-        <h3 class="font-headline italic text-2xl font-bold text-primary mb-1">No vessels in fleet</h3>
-        <p class="text-sm text-on-surface-variant font-mono uppercase tracking-widest mb-6">Add a connection manually or sync from phpIPAM</p>
-        <a href="/connections/new" class="bg-primary text-on-primary px-6 py-3 font-mono text-xs uppercase tracking-widest transition-colors flex items-center gap-2 active:scale-95" style="border-top-right-radius:12px;border-bottom-left-radius:12px;">
-            <span class="material-symbols-outlined text-[16px]">add</span>
-            Initialize Node
+        <h3 class="font-headline text-2xl font-bold text-on-surface mb-2">No connections yet</h3>
+        <p class="text-sm text-on-surface-variant font-body mb-8 max-w-xs text-center">Add a connection manually or import from a file</p>
+        <a href="/connections/new" class="flex items-center gap-2 bg-gradient-to-br from-primary to-primary-container text-white font-headline font-bold px-6 py-3 rounded-full shadow-lg shadow-primary/25 active:scale-95 transition-all">
+            <span class="material-symbols-outlined text-[18px]">add</span>
+            New Connection
         </a>
     </div>
     {% endif %}
 </div>
 
 <!-- Import Modal -->
-<div id="importModal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm">
-    <div class="bg-surface border border-outline-variant p-6 max-w-lg w-full mx-4 shadow-2xl" style="border-top-right-radius:24px;border-bottom-left-radius:24px;">
+<div id="importModal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/30 backdrop-blur-sm">
+    <div class="glass-panel border border-white/20 rounded-[2rem] p-6 max-w-lg w-full mx-4 shadow-2xl">
         <div class="flex items-center justify-between mb-5">
             <div class="flex items-center gap-3">
-                <div class="p-2 bg-secondary/10" style="border-radius:6px 2px 6px 2px;">
-                    <span class="material-symbols-outlined text-secondary">upload</span>
+                <div class="p-2 bg-primary/10 rounded-xl">
+                    <span class="material-symbols-outlined text-primary">upload</span>
                 </div>
                 <div>
-                    <h3 class="font-headline italic font-bold text-primary text-lg">Import Connections</h3>
-                    <p class="text-xs text-on-surface-variant font-mono mt-0.5">JSON (Castaway export) or CSV</p>
+                    <h3 class="font-headline font-bold text-on-surface text-lg">Import Connections</h3>
+                    <p class="text-xs text-on-surface-variant font-body mt-0.5">JSON (Castaway export) or CSV</p>
                 </div>
             </div>
-            <button onclick="document.getElementById('importModal').classList.add('hidden')" class="text-on-surface-variant hover:text-on-surface">
+            <button onclick="document.getElementById('importModal').classList.add('hidden')" class="text-on-surface-variant hover:text-on-surface p-1">
                 <span class="material-symbols-outlined">close</span>
             </button>
         </div>
         <div class="mb-4">
-            <label class="block text-xs text-on-surface-variant mb-2 font-mono uppercase tracking-widest">Format</label>
+            <label class="block text-xs text-on-surface-variant mb-2 font-label uppercase tracking-widest">Format</label>
             <div class="flex gap-2">
-                <button id="fmtJson" onclick="setFmt('json')" class="fmt-btn flex-1 py-2 text-xs font-mono uppercase tracking-widest border border-outline-variant transition-colors" style="border-radius:6px 2px 6px 2px;">JSON</button>
-                <button id="fmtCsv" onclick="setFmt('csv')" class="fmt-btn flex-1 py-2 text-xs font-mono uppercase tracking-widest border border-outline-variant transition-colors" style="border-radius:6px 2px 6px 2px;">CSV</button>
+                <button id="fmtJson" onclick="setFmt('json')" class="fmt-btn flex-1 py-2 text-xs font-label uppercase tracking-widest border border-outline-variant rounded-full transition-colors">JSON</button>
+                <button id="fmtCsv" onclick="setFmt('csv')" class="fmt-btn flex-1 py-2 text-xs font-label uppercase tracking-widest border border-outline-variant rounded-full transition-colors">CSV</button>
             </div>
         </div>
-        <div id="csvHint" class="hidden mb-3 p-3 bg-surface-container text-xs text-on-surface-variant font-mono" style="border-radius:6px;">
+        <div id="csvHint" class="hidden mb-3 p-3 bg-surface-container text-xs text-on-surface-variant font-mono rounded-xl">
             name,host,port,protocol,username,notes
         </div>
         <div class="mb-4">
-            <label class="block text-xs text-on-surface-variant mb-2 font-mono uppercase tracking-widest">Paste or drop file content</label>
-            <textarea id="importText" rows="7" class="w-full px-3 py-2 bg-surface-container border border-outline-variant text-on-surface text-xs font-mono focus:outline-none focus:ring-2 focus:ring-secondary resize-none" style="border-radius:6px 2px 6px 2px;" placeholder='[{"name":"...","host":"..."}]'></textarea>
+            <label class="block text-xs text-on-surface-variant mb-2 font-label uppercase tracking-widest">Paste or drop file content</label>
+            <textarea id="importText" rows="7" class="w-full px-4 py-3 bg-surface-container border border-outline-variant/30 text-on-surface text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none rounded-2xl"
+                placeholder='[{"name":"...","host":"..."}]'></textarea>
         </div>
-        <div id="importResult" class="hidden mb-4 p-3 text-sm font-mono" style="border-radius:6px;"></div>
+        <div id="importResult" class="hidden mb-4 p-3 text-sm font-mono rounded-xl"></div>
         <div class="flex gap-3 justify-end">
-            <button onclick="document.getElementById('importModal').classList.add('hidden')" class="px-4 py-2 bg-surface-container border border-outline-variant text-on-surface-variant text-xs font-mono uppercase tracking-widest transition-colors" style="border-radius:6px 2px 6px 2px;">Cancel</button>
-            <button id="importBtn" onclick="doImport()" class="px-4 py-2 bg-primary text-on-primary text-xs font-mono uppercase tracking-widest transition-colors flex items-center gap-1.5" style="border-radius:6px 2px 6px 2px;">
+            <button onclick="document.getElementById('importModal').classList.add('hidden')" class="px-5 py-2 bg-surface-container border border-outline-variant/30 text-on-surface-variant text-sm font-label rounded-full transition-colors">Cancel</button>
+            <button id="importBtn" onclick="doImport()" class="px-5 py-2 bg-gradient-to-br from-primary to-primary-container text-white text-sm font-label font-bold rounded-full transition-colors flex items-center gap-1.5">
                 <span class="material-symbols-outlined text-[15px]">upload</span> Import
             </button>
         </div>
@@ -243,13 +241,10 @@
 function filterCards() {
     const q = document.getElementById('search').value.toLowerCase();
     const folderId = document.getElementById('folderFilter')?.value || '';
-    let visible = 0;
     document.querySelectorAll('.connection-card').forEach(card => {
         const textMatch = !q || card.dataset.name.includes(q) || card.dataset.host.includes(q);
         const folderMatch = !folderId || card.dataset.folder === folderId;
-        const show = textMatch && folderMatch;
-        card.style.display = show ? '' : 'none';
-        if (show) visible++;
+        card.style.display = (textMatch && folderMatch) ? '' : 'none';
     });
 }
 document.getElementById('search')?.addEventListener('input', filterCards);
@@ -258,20 +253,20 @@ document.getElementById('folderFilter')?.addEventListener('change', filterCards)
 // ── Delete confirm modal ──────────────────────────────────────────────────────
 function showDeleteConfirm(id, name, onConfirm) {
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm';
+    modal.className = 'fixed inset-0 z-[200] flex items-center justify-center bg-black/30 backdrop-blur-sm';
     modal.innerHTML = `
-        <div class="bg-surface border border-outline-variant p-6 max-w-sm w-full mx-4 shadow-2xl" style="border-top-right-radius:24px;border-bottom-left-radius:24px;">
+        <div class="glass-panel border border-white/20 rounded-[2rem] p-6 max-w-sm w-full mx-4 shadow-2xl">
             <div class="flex items-center gap-3 mb-4">
-                <div class="p-2 bg-red-500/10" style="border-radius:6px 2px 6px 2px;"><span class="material-symbols-outlined text-red-500">delete</span></div>
+                <div class="p-2 bg-error/10 rounded-xl"><span class="material-symbols-outlined text-error">delete</span></div>
                 <div>
-                    <h3 class="font-headline italic font-bold text-primary text-lg">Delete Connection</h3>
-                    <p class="text-xs text-on-surface-variant font-mono mt-0.5">This action cannot be undone</p>
+                    <h3 class="font-headline font-bold text-on-surface text-lg">Delete Connection</h3>
+                    <p class="text-xs text-on-surface-variant font-body mt-0.5">This action cannot be undone</p>
                 </div>
             </div>
             <p class="text-sm text-on-surface font-body mb-6">Delete <span class="font-semibold text-primary">${name}</span>?</p>
             <div class="flex gap-3 justify-end">
-                <button id="cancelDel" class="px-4 py-2 bg-surface-container border border-outline-variant text-on-surface-variant text-xs font-mono uppercase tracking-widest" style="border-radius:6px 2px 6px 2px;">Cancel</button>
-                <button id="confirmDel" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-mono uppercase tracking-widest transition-colors" style="border-radius:6px 2px 6px 2px;">Delete</button>
+                <button id="cancelDel" class="px-5 py-2 bg-surface-container border border-outline-variant/30 text-on-surface-variant text-sm font-label rounded-full">Cancel</button>
+                <button id="confirmDel" class="px-5 py-2 bg-error text-white text-sm font-label font-bold rounded-full transition-colors">Delete</button>
             </div>
         </div>`;
     document.body.appendChild(modal);
@@ -283,7 +278,7 @@ function showDeleteConfirm(id, name, onConfirm) {
 // ── Single connection actions ─────────────────────────────────────────────────
 async function testConnection(id, btn) {
     const orig = btn.innerHTML;
-    btn.innerHTML = '<span class="material-symbols-outlined text-[14px] animate-spin">sync</span>';
+    btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">sync</span>';
     btn.disabled = true;
     const res = await apiFetch(`/api/connections/${id}/test`, { method: 'POST' });
     const data = await res.json();
@@ -308,15 +303,14 @@ async function deleteConnection(id, name) {
 
 function updateCount() {
     const badge = document.querySelector('.connection-count-badge');
-    if (badge) badge.textContent = document.querySelectorAll('.connection-card').length + ' CONNECTIONS';
+    if (badge) badge.textContent = document.querySelectorAll('.connection-card').length;
 }
 
 // ── Status refresh ────────────────────────────────────────────────────────────
 document.getElementById('refreshStatusBtn')?.addEventListener('click', async (e) => {
     const btn = e.currentTarget;
-    const orig = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<span class="material-symbols-outlined text-[15px] animate-spin">sync</span> Checking...';
+    btn.querySelector('.material-symbols-outlined').classList.add('animate-spin');
     const res = await apiFetch('/api/connections/status/refresh', { method: 'POST' });
     if (res.ok) {
         const data = await res.json();
@@ -325,16 +319,15 @@ document.getElementById('refreshStatusBtn')?.addEventListener('click', async (e)
     } else {
         const data = await res.json().catch(() => ({}));
         toast(data.error || 'Status check failed', 'error');
-        btn.innerHTML = orig;
         btn.disabled = false;
+        btn.querySelector('.material-symbols-outlined').classList.remove('animate-spin');
     }
 });
 
 document.getElementById('refreshScreenshotsBtn')?.addEventListener('click', async (e) => {
     const btn = e.currentTarget;
-    const orig = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<span class="material-symbols-outlined text-[15px] animate-spin">sync</span> Capturing...';
+    btn.querySelector('.material-symbols-outlined').classList.add('animate-spin');
     const res = await apiFetch('/api/connections/screenshots/refresh', { method: 'POST' });
     if (res.ok) {
         const data = await res.json();
@@ -343,8 +336,8 @@ document.getElementById('refreshScreenshotsBtn')?.addEventListener('click', asyn
     } else {
         const data = await res.json().catch(() => ({}));
         toast(data.error || 'Screenshot refresh failed', 'error');
-        btn.innerHTML = orig;
         btn.disabled = false;
+        btn.querySelector('.material-symbols-outlined').classList.remove('animate-spin');
     }
 });
 
@@ -375,9 +368,6 @@ function toggleBulkMode() {
         }
     });
     document.getElementById('bulkBar').classList.toggle('hidden', !bulkMode);
-    document.getElementById('bulkToggleBtn').innerHTML = bulkMode
-        ? '<span class="material-symbols-outlined text-[15px]">close</span> Cancel'
-        : '<span class="material-symbols-outlined text-[15px]">checklist</span> Select';
     updateBulkCount();
 }
 
@@ -389,7 +379,7 @@ function toggleSelect(id, card) {
         card.querySelector('.bulk-checkbox').checked = false;
     } else {
         selected.add(id);
-        card.style.outline = '2px solid #006971';
+        card.style.outline = '2px solid #00647c';
         card.querySelector('.bulk-checkbox').checked = true;
     }
     updateBulkCount();
@@ -407,7 +397,7 @@ function selectAll() {
         const id = parseInt(card.dataset.id);
         if (card.style.display !== 'none') {
             selected.add(id);
-            card.style.outline = '2px solid #006971';
+            card.style.outline = '2px solid #00647c';
             const cb = card.querySelector('.bulk-checkbox');
             if (cb) cb.checked = true;
         }
@@ -451,9 +441,9 @@ function setFmt(fmt) {
     importFmt = fmt;
     document.querySelectorAll('.fmt-btn').forEach(b => {
         const isActive = b.id === 'fmt' + fmt.charAt(0).toUpperCase() + fmt.slice(1);
-        b.style.background = isActive ? '#070100' : '';
+        b.style.background = isActive ? '#00647c' : '';
         b.style.color = isActive ? '#ffffff' : '';
-        b.style.borderColor = isActive ? '#070100' : '';
+        b.style.borderColor = isActive ? '#00647c' : '';
     });
     document.getElementById('importText').placeholder = fmt === 'csv'
         ? 'name,host,port,protocol,username,notes\nMyServer,192.168.1.1,22,ssh,root,'
@@ -477,7 +467,7 @@ async function doImport() {
     const resultEl = document.getElementById('importResult');
     resultEl.classList.remove('hidden');
     if (res.ok) {
-        resultEl.style.cssText = 'background:rgba(0,105,113,0.1);border:1px solid rgba(0,105,113,0.2);color:#006971;';
+        resultEl.style.cssText = 'background:rgba(0,100,124,0.1);border:1px solid rgba(0,100,124,0.2);color:#00647c;';
         resultEl.textContent = `Imported ${data.imported} connection(s). ${data.skipped ? data.skipped + ' skipped.' : ''}`;
         toast(`Imported ${data.imported} connections`, 'success');
         setTimeout(() => { document.getElementById('importModal').classList.add('hidden'); location.reload(); }, 1200);
