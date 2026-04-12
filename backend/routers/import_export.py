@@ -1,9 +1,12 @@
-"""Export routes — JSON export of connections."""
+"""Import/export routes for connections."""
 
+import csv
+import io
 import json
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, Response
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -50,3 +53,68 @@ async def export_connections(request: Request, db: AsyncSession = Depends(get_db
         media_type="application/json",
         headers={"Content-Disposition": 'attachment; filename="castaway-connections.json"'},
     )
+
+
+class ImportBody(BaseModel):
+    content: str
+
+
+@router.post("/import/connections")
+async def import_connections(
+    request: Request,
+    body: ImportBody,
+    format: str = "json",
+    db: AsyncSession = Depends(get_db),
+):
+    """Import connections from JSON or CSV. Passwords are not imported."""
+    user = getattr(request.state, "current_user", None)
+    if not user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    rows: list[dict] = []
+    try:
+        if format == "csv":
+            reader = csv.DictReader(io.StringIO(body.content.strip()))
+            for row in reader:
+                rows.append({k.strip(): v.strip() for k, v in row.items()})
+        else:
+            parsed = json.loads(body.content)
+            if not isinstance(parsed, list):
+                return JSONResponse({"error": "JSON must be an array of connection objects"}, status_code=400)
+            rows = parsed
+    except (json.JSONDecodeError, csv.Error) as e:
+        return JSONResponse({"error": f"Parse error: {e}"}, status_code=400)
+
+    imported = 0
+    skipped = 0
+    for row in rows:
+        name = str(row.get("name", "")).strip()
+        host = str(row.get("host", "")).strip()
+        if not name or not host:
+            skipped += 1
+            continue
+
+        try:
+            port = int(row.get("port", 22))
+        except (ValueError, TypeError):
+            port = 22
+
+        protocol = str(row.get("protocol", "ssh")).lower()
+        if protocol not in ("ssh", "rdp"):
+            protocol = "ssh"
+
+        conn = SSHConnection(
+            user_id=user.id,
+            name=name,
+            host=host,
+            port=port,
+            protocol=protocol,
+            username=str(row.get("username", "")).strip() or None,
+            notes=str(row.get("notes", "")).strip() or None,
+            source="import",
+        )
+        db.add(conn)
+        imported += 1
+
+    await db.commit()
+    return {"imported": imported, "skipped": skipped}

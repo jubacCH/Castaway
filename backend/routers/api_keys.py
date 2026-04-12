@@ -18,6 +18,7 @@ router = APIRouter(prefix="/api/keys")
 class KeyCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=128)
     role: str = Field(default="readonly", pattern="^(readonly|editor|admin)$")
+    expires_days: int | None = Field(default=None, ge=1, le=3650)  # None = never expires
 
 
 @router.get("")
@@ -30,6 +31,8 @@ async def list_keys(request: Request, db: AsyncSession = Depends(get_db)):
         select(ApiKey).where(ApiKey.user_id == user.id).order_by(ApiKey.created_at.desc())
     )
     keys = result.scalars().all()
+    from datetime import datetime as _dt
+    now = _dt.utcnow()
     return {"keys": [{
         "id": k.id,
         "name": k.name,
@@ -37,6 +40,8 @@ async def list_keys(request: Request, db: AsyncSession = Depends(get_db)):
         "role": k.role,
         "created_at": str(k.created_at) if k.created_at else None,
         "last_used_at": str(k.last_used_at) if k.last_used_at else None,
+        "expires_at": str(k.expires_at) if k.expires_at else None,
+        "expired": bool(k.expires_at and k.expires_at < now),
     } for k in keys]}
 
 
@@ -46,6 +51,9 @@ async def create_key(request: Request, body: KeyCreate, db: AsyncSession = Depen
     if not user:
         return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
+    from datetime import datetime as _dt, timedelta as _td
+    expires_at = _dt.utcnow() + _td(days=body.expires_days) if body.expires_days else None
+
     raw_key, key_hash = generate_api_key()
     api_key = ApiKey(
         user_id=user.id,
@@ -53,12 +61,16 @@ async def create_key(request: Request, body: KeyCreate, db: AsyncSession = Depen
         key_hash=key_hash,
         prefix=raw_key[:12],
         role=body.role,
+        expires_at=expires_at,
     )
     db.add(api_key)
     await db.commit()
 
     # Return the raw key ONCE — it can never be retrieved again
-    return {"id": api_key.id, "name": api_key.name, "key": raw_key, "role": api_key.role}
+    return {
+        "id": api_key.id, "name": api_key.name, "key": raw_key, "role": api_key.role,
+        "expires_at": str(api_key.expires_at) if api_key.expires_at else None,
+    }
 
 
 @router.delete("/{key_id}")

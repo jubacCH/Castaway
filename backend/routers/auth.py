@@ -150,6 +150,9 @@ async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends
     token = secrets.token_hex(32)
     db.add(Session(token=hash_token(token), user_id=user.id,
                    expires_at=datetime.utcnow() + timedelta(days=SESSION_DAYS)))
+
+    from services.audit import audit
+    await audit(db, request, "login", "user", user.id, user.username)
     await db.commit()
 
     return _session_response(user, token, request)

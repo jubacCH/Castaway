@@ -149,6 +149,9 @@ async def create_connection(
         for tag_id in body.tag_ids:
             await db.execute(connection_tags.insert().values(connection_id=conn.id, tag_id=tag_id))
 
+    from services.audit import audit
+    await audit(db, request, "create", "connection", conn.id, conn.name,
+                {"host": conn.host, "port": conn.port, "protocol": conn.protocol})
     await db.commit()
     return _conn_to_dict(conn)
 
@@ -259,6 +262,9 @@ async def update_connection(
         for tag_id in body.tag_ids:
             await db.execute(connection_tags.insert().values(connection_id=conn.id, tag_id=tag_id))
 
+    from services.audit import audit
+    await audit(db, request, "update", "connection", conn.id, conn.name,
+                {"host": conn.host, "port": conn.port})
     await db.commit()
     return _conn_to_dict(conn)
 
@@ -273,6 +279,8 @@ async def delete_connection(request: Request, conn_id: int, db: AsyncSession = D
     if not conn or (conn.user_id != user.id and user.role != "admin"):
         return JSONResponse({"error": "Not found"}, status_code=404)
 
+    from services.audit import audit
+    await audit(db, request, "delete", "connection", conn.id, conn.name)
     await db.delete(conn)
     await db.commit()
     return {"ok": True}
