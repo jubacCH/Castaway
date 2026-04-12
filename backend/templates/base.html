@@ -249,7 +249,7 @@
         <span class="material-symbols-outlined" {% if '/profile' in request.url.path %}style="font-variation-settings:'FILL' 1;"{% endif %}>person</span>
     </a>
     {% if user.role == 'admin' %}
-    <button onclick="toggleAdminSheet()" id="mobileAdminBtn"
+    <button id="mobileAdminBtn"
         class="p-3 {% if '/users' in request.url.path or '/settings' in request.url.path %}text-primary{% else %}text-on-surface-variant{% endif %}">
         <span class="material-symbols-outlined" {% if '/users' in request.url.path or '/settings' in request.url.path %}style="font-variation-settings:'FILL' 1;"{% endif %}>apps</span>
     </button>
@@ -265,19 +265,19 @@
 <div id="adminSheet" class="hidden lg:hidden fixed inset-x-4 bottom-24 z-[60] glass-panel rounded-[2rem] border border-white/20 shadow-2xl p-5">
     <div class="text-[10px] font-bold tracking-[0.2em] uppercase text-outline/60 font-label mb-3">Admin</div>
     <div class="grid grid-cols-4 gap-2">
-        <a href="/users" onclick="hideAdminSheet()" class="flex flex-col items-center gap-1.5 py-3 rounded-2xl hover:bg-surface-container transition-colors">
+        <a href="/users" class="flex flex-col items-center gap-1.5 py-3 rounded-2xl hover:bg-surface-container transition-colors">
             <span class="material-symbols-outlined text-primary text-[22px]" {% if '/users' in request.url.path %}style="font-variation-settings:'FILL' 1;"{% endif %}>group</span>
             <span class="text-[10px] font-label text-on-surface-variant">Users</span>
         </a>
-        <a href="/settings/phpipam" onclick="hideAdminSheet()" class="flex flex-col items-center gap-1.5 py-3 rounded-2xl hover:bg-surface-container transition-colors">
+        <a href="/settings/phpipam" class="flex flex-col items-center gap-1.5 py-3 rounded-2xl hover:bg-surface-container transition-colors">
             <span class="material-symbols-outlined text-primary text-[22px]" {% if 'phpipam' in request.url.path %}style="font-variation-settings:'FILL' 1;"{% endif %}>dns</span>
             <span class="text-[10px] font-label text-on-surface-variant">IPAM</span>
         </a>
-        <a href="/settings/vaultwarden" onclick="hideAdminSheet()" class="flex flex-col items-center gap-1.5 py-3 rounded-2xl hover:bg-surface-container transition-colors">
+        <a href="/settings/vaultwarden" class="flex flex-col items-center gap-1.5 py-3 rounded-2xl hover:bg-surface-container transition-colors">
             <span class="material-symbols-outlined text-primary text-[22px]" {% if 'vaultwarden' in request.url.path %}style="font-variation-settings:'FILL' 1;"{% endif %}>vpn_key</span>
             <span class="text-[10px] font-label text-on-surface-variant">Keyring</span>
         </a>
-        <a href="/settings" onclick="hideAdminSheet()" class="flex flex-col items-center gap-1.5 py-3 rounded-2xl hover:bg-surface-container transition-colors">
+        <a href="/settings" class="flex flex-col items-center gap-1.5 py-3 rounded-2xl hover:bg-surface-container transition-colors">
             <span class="material-symbols-outlined text-primary text-[22px]" {% if request.url.path == '/settings' %}style="font-variation-settings:'FILL' 1;"{% endif %}>settings</span>
             <span class="text-[10px] font-label text-on-surface-variant">Config</span>
         </a>
@@ -401,6 +401,10 @@
     function hideAdminSheet() {
         document.getElementById('adminSheet')?.classList.add('hidden');
     }
+    document.getElementById('mobileAdminBtn')?.addEventListener('click', toggleAdminSheet);
+    document.getElementById('adminSheet')?.querySelectorAll('a').forEach(a => {
+        a.addEventListener('click', hideAdminSheet);
+    });
     document.addEventListener('click', (e) => {
         const sheet = document.getElementById('adminSheet');
         const btn = document.getElementById('mobileAdminBtn');
